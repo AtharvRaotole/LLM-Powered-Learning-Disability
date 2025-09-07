@@ -1,0 +1,472 @@
+import os
+import json
+import re
+from dotenv import load_dotenv
+from fastapi import HTTPException, Response
+from openai import OpenAI
+
+load_dotenv()
+
+# Initialize OpenAI client directly
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def clean_json_response(content):
+    """Extract JSON from markdown code blocks and clean it"""
+    # Remove markdown code blocks
+    content = re.sub(r'```json\s*', '', content)
+    content = re.sub(r'```\s*$', '', content)
+    content = content.strip()
+    
+    # Try to parse as JSON
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        # If parsing fails, try to find JSON within the content
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+        raise ValueError("No valid JSON found in response")
+
+# Global variables to store intermediate results
+approach = ""
+thought = ""
+strategies = ""
+problem=""
+
+async def Problem(grade_level="7th", difficulty="medium"):
+    global approach, thought, strategies
+    prompt = f"""
+You are an expert mathematics educator specializing in creating age-appropriate word problems for students with learning disabilities. You understand the cognitive development stages and can create problems that are challenging yet accessible.
+
+Generate a well-structured mathematics word problem suitable for a {grade_level} grade student with {difficulty} difficulty level. The problem should:
+
+1. Be age-appropriate and engaging
+2. Use clear, simple language
+3. Include real-world context that students can relate to
+4. Have a single, clear solution path
+5. Be solvable in 3-5 steps
+6. Include numbers that are manageable for the grade level
+7. Match the specified difficulty level
+
+For 2nd grade: Focus on basic addition/subtraction, simple counting, basic shapes
+For 5th grade: Include fractions, decimals, basic geometry, multi-step problems
+For 7th grade: Include algebra basics, ratios, percentages, more complex word problems
+
+Difficulty levels:
+- Easy: Simple operations, small numbers, 2-3 steps
+- Medium: Moderate complexity, medium numbers, 3-4 steps
+- Hard: Complex reasoning, larger numbers, 4-5 steps
+
+CRITICAL: The "answer" field must contain the EXACT final numerical answer that matches the solution steps. Double-check that your answer is consistent with your solution approach.
+
+Format your output as JSON in the following structure:
+{{
+  "problem": "<Word problem>",
+  "answer": "<Final numerical answer - must match solution>",
+  "solution": "<Detailed step-by-step approach to solve the problem>",
+  "grade_level": "{grade_level}",
+  "concepts": ["<list of math concepts covered>"],
+  "difficulty": "{difficulty}"
+}}
+"""
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+        content = response.choices[0].message.content
+        
+        # Clean and parse the JSON response
+        json_data = clean_json_response(content)
+        
+        # Reset globals for new problem
+        approach = ""
+        thought = ""
+        strategies = ""
+        
+        return Response(content=json.dumps(json_data), media_type="application/json")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error while generating problem: {str(e)}")
+
+async def Attempt(disability: str, problem: str):
+    global approach
+    
+    # Detailed disability information for better simulation
+    disability_info = {
+        "Dyslexia": {
+            "description": "A learning disability that affects reading, writing, and language processing",
+            "characteristics": [
+                "Difficulty with letter and number recognition",
+                "Tendency to reverse or transpose letters/numbers (b/d, p/q, 6/9)",
+                "Slow reading speed and frequent re-reading",
+                "Difficulty with word problems due to reading challenges",
+                "May skip words or lines while reading"
+            ],
+            "math_impact": "May misread numbers, confuse operation symbols, or struggle with word problems"
+        },
+        "Dysgraphia": {
+            "description": "A learning disability that affects writing and fine motor skills",
+            "characteristics": [
+                "Poor handwriting and difficulty with letter formation",
+                "Trouble with spacing and alignment",
+                "Difficulty copying from board or book",
+                "May write numbers backwards or in wrong order",
+                "Slow writing speed affects problem-solving flow"
+            ],
+            "math_impact": "May miscopy numbers, lose track of steps, or have messy work that leads to errors"
+        },
+        "Dyscalculia": {
+            "description": "A learning disability that affects number sense and mathematical reasoning",
+            "characteristics": [
+                "Difficulty understanding number concepts and relationships",
+                "Trouble with basic arithmetic operations",
+                "Confusion with mathematical symbols and operations",
+                "Difficulty with number sequencing and place value",
+                "Problems with estimation and mental math"
+            ],
+            "math_impact": "May confuse operations, misunderstand fractions, or struggle with number sense"
+        },
+        "Attention Deficit Hyperactivity Disorder": {
+            "description": "A neurodevelopmental disorder affecting attention, impulse control, and hyperactivity",
+            "characteristics": [
+                "Difficulty sustaining attention on tasks",
+                "Impulsive decision-making and rushing through problems",
+                "Tendency to skip steps or make careless errors",
+                "Difficulty with multi-step problems",
+                "May lose track of the problem's goal"
+            ],
+            "math_impact": "May rush through problems, skip steps, or lose focus mid-calculation"
+        },
+        "Auditory Processing Disorder": {
+            "description": "A hearing disorder that affects how the brain processes auditory information",
+            "characteristics": [
+                "Difficulty understanding spoken instructions",
+                "Trouble distinguishing between similar sounds",
+                "May need instructions repeated multiple times",
+                "Difficulty following multi-step verbal directions",
+                "Sensitivity to background noise"
+            ],
+            "math_impact": "May misinterpret verbal instructions or confuse similar-sounding numbers"
+        },
+        "Non verbal Learning Disorder": {
+            "description": "A learning disability that affects visual-spatial processing and social skills",
+            "characteristics": [
+                "Difficulty with visual-spatial relationships",
+                "Trouble understanding charts, graphs, and diagrams",
+                "Poor sense of direction and spatial orientation",
+                "Difficulty with geometry and spatial reasoning",
+                "May struggle with visual organization"
+            ],
+            "math_impact": "May misjudge quantities, struggle with geometry, or have trouble with visual representations"
+        },
+        "Language Processing Disorder": {
+            "description": "A learning disability that affects understanding and use of language",
+            "characteristics": [
+                "Difficulty understanding complex language structures",
+                "Trouble with vocabulary and word meanings",
+                "Difficulty following multi-step instructions",
+                "May misunderstand question intent or context",
+                "Problems with abstract language concepts"
+            ],
+            "math_impact": "May misunderstand word problem language, confuse mathematical terms, or misinterpret questions"
+        }
+    }
+    
+    disability_data = disability_info.get(disability, disability_info["Dyslexia"])
+    
+    prompt = f"""
+You are a student with {disability}. Here's what you need to know about how this affects your learning:
+
+Description: {disability_data['description']}
+Characteristics: {', '.join(disability_data['characteristics'])}
+Math Impact: {disability_data['math_impact']}
+
+You are trying to solve this math problem: {problem}
+
+IMPORTANT: You are NOT aware that you have a learning disability. You believe you are solving the problem correctly, but your disability naturally affects how you approach and solve math problems. You may make mistakes that seem logical to you but are actually influenced by your learning differences.
+
+Your approach should be realistic and show how a student with {disability} would genuinely think and work through this problem, including any confusion, assumptions, or mistakes that would naturally occur.
+
+Think aloud as you try to solve this problem step-by-step. Show your internal thought process, including:
+
+1. How you read and understand the problem
+2. Your approach to solving it
+3. Any confusion or difficulties you encounter
+4. The steps you take (including any mistakes)
+5. Your final answer
+
+Make sure to include at least 3-4 steps and show realistic mistakes that would occur due to {disability}.
+
+Output your response in this JSON format:
+
+{{
+  "thoughtprocess": "<Your internal thoughts as you read and understand the problem - show any confusion or assumptions>",
+  "steps_to_solve": [
+    "Step 1: <Your first approach to the problem>",
+    "Step 2: <What you do next, including any confusion>",
+    "Step 3: <Your continued work, showing any mistakes>",
+    "Step 4: <Your final attempt and answer>"
+  ],
+  "disability_impact": "<Brief explanation of how {disability} influenced your approach>"
+}}
+"""
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+        content = response.choices[0].message.content
+        
+        # Clean and parse the JSON response
+        json_data = clean_json_response(content)
+        
+        return Response(content=json.dumps(json_data), media_type="application/json")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error while generating approach: {str(e)}")
+
+async def Thought(disability: str, problem: str):
+    global approach, thought
+    prompt = f"""
+You are an expert educational psychologist and learning disability specialist with extensive experience in analyzing student work and understanding how different learning disabilities manifest in mathematical problem-solving.
+
+The student has {disability} and was given this problem: {problem}
+
+Their approach was: {approach}
+
+Your task is to provide a comprehensive, evidence-based analysis of the student's thinking process. Focus on:
+
+1. **Cognitive Analysis**: How the disability affects information processing
+2. **Behavioral Patterns**: Observable patterns in the student's approach
+3. **Educational Implications**: What this reveals about their learning needs
+4. **Multiple Perspectives**: Consider various factors that may have influenced their approach
+
+Use professional, clinical language while remaining accessible. Avoid making definitive diagnoses or assumptions about the student's intelligence or effort level.
+
+Provide a detailed analysis in this JSON format:
+
+{{
+  "thought": "<Comprehensive analysis of the student's approach, including cognitive factors, disability-related challenges, and educational implications. Use third-person perspective and professional language.>",
+  "mistake_analysis": {{
+    "type": "<Type of mistake: conceptual/procedural/operational/interpretive/attention>",
+    "severity": "<mild/moderate/severe>",
+    "frequency": "<isolated/pattern/common>"
+  }},
+  "disability_connections": [
+    "<Specific way {disability} influenced this approach>",
+    "<Another way the disability may have contributed>",
+    "<Additional factor related to the disability>"
+  ],
+  "learning_implications": "<What this reveals about the student's learning needs and strengths>"
+}}
+"""
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        content = response.choices[0].message.content
+        
+        # Clean and parse the JSON response
+        json_data = clean_json_response(content)
+        
+        return Response(content=json.dumps(json_data), media_type="application/json")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error while generating thought: {str(e)}")
+
+async def Strategies(disability: str, problem: str):
+    global approach, thought, strategies
+    prompt = f"""
+You are a highly experienced special education teacher and learning disability specialist with expertise in evidence-based instructional strategies. You have worked with hundreds of students with various learning disabilities and understand how to adapt teaching methods to meet individual needs.
+
+Problem: {problem}
+Student's disability: {disability}
+Student's approach: {approach}
+Student's thought process: {thought}
+
+Your task is to provide comprehensive, research-based teaching strategies that are specifically tailored to this student's disability and the challenges they demonstrated in their approach. Focus on:
+
+1. **Immediate Interventions**: Strategies to use right away
+2. **Long-term Accommodations**: Ongoing supports
+3. **Multi-sensory Approaches**: Engaging different learning modalities
+4. **Technology Integration**: Digital tools and assistive technology
+5. **Assessment Modifications**: How to evaluate progress appropriately
+
+Each strategy should be specific, actionable, and directly related to the student's demonstrated needs.
+
+Provide comprehensive teaching strategies in this JSON format:
+
+{{
+  "immediate_strategies": [
+    "<Strategy 1: What to do immediately to help this student>",
+    "<Strategy 2: Another immediate intervention>",
+    "<Strategy 3: Third immediate strategy>"
+  ],
+  "accommodations": [
+    "<Accommodation 1: Ongoing support or modification>",
+    "<Accommodation 2: Another accommodation>",
+    "<Accommodation 3: Third accommodation>"
+  ],
+  "multi_sensory_approaches": [
+    "<Visual strategy: How to use visual supports>",
+    "<Auditory strategy: How to use auditory learning>",
+    "<Kinesthetic strategy: How to use hands-on learning>"
+  ],
+  "technology_tools": [
+    "<Digital tool 1: Specific technology recommendation>",
+    "<Digital tool 2: Another technology suggestion>"
+  ],
+  "assessment_modifications": [
+    "<How to modify assessment for this student>",
+    "<Alternative ways to evaluate understanding>"
+  ],
+  "parent_communication": "<Key points to discuss with parents/guardians>"
+}}
+"""
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
+        content = response.choices[0].message.content
+        
+        # Clean and parse the JSON response
+        json_data = clean_json_response(content)
+        
+        return Response(content=json.dumps(json_data), media_type="application/json")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error while generating strategies: {str(e)}")
+
+async def Tutor(disability: str, problem: str):
+    global approach, thought, strategies
+    prompt = f"""
+You are an experienced, patient, and skilled tutor who specializes in working with students with learning disabilities. You have a deep understanding of {disability} and how it affects learning, and you use evidence-based teaching methods to help students succeed.
+
+Problem: {problem}
+Student's approach: {approach}
+Student's thoughts: {thought}
+Available strategies: {strategies}
+
+Your tutoring style should be:
+- Patient and encouraging
+- Uses scaffolding and guided discovery
+- Provides multiple ways to understand concepts
+- Celebrates small successes
+- Asks open-ended questions to check understanding
+- Uses visual aids and concrete examples when helpful
+- Adapts your language to the student's level
+
+The student may show frustration, confusion, or lack of confidence. Respond with empathy and support while gently guiding them toward understanding.
+
+Create a realistic 10-12 exchange tutoring conversation that implements effective strategies for this student. The conversation should:
+
+1. Start with building rapport and understanding the student's perspective
+2. Gently address the specific challenges they had
+3. Use scaffolding to guide them to the correct approach
+4. Provide multiple ways to understand the concept
+5. Check for understanding throughout
+6. End on a positive, encouraging note
+
+Make the student's responses realistic - they may be hesitant, confused, or make mistakes initially, but should show progress with guidance.
+
+Format as JSON:
+{{
+"conversation": [
+    {{"speaker": "Tutor", "text": "<tutor's message>", "strategy": "<teaching strategy being used>"}},
+    {{"speaker": "Student", "text": "<student's response>", "emotion": "<student's emotional state>"}},
+    {{"speaker": "Tutor", "text": "<tutor's message>", "strategy": "<teaching strategy being used>"}},
+    {{"speaker": "Student", "text": "<student's response>", "emotion": "<student's emotional state>"}}
+  ],
+  "learning_objectives": [
+    "<What the student should learn from this session>",
+    "<Another learning goal>"
+  ],
+  "follow_up_activities": [
+    "<Activity to reinforce learning>",
+    "<Another follow-up suggestion>"
+]
+}}
+"""
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6
+        )
+        content = response.choices[0].message.content
+        
+        # Clean and parse the JSON response
+        json_data = clean_json_response(content)
+        
+        return Response(content=json.dumps(json_data), media_type="application/json")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error while generating tutor conversation: {str(e)}")
+
+async def IdentifyDisability(problem: str, student_response: str):
+    """
+    New function to identify potential learning disabilities based on student's response
+    """
+    prompt = f"""
+You are an expert educational psychologist and learning disability specialist with extensive experience in analyzing student work patterns to identify potential learning challenges. You understand the subtle signs and patterns that may indicate different types of learning disabilities.
+
+Problem given to student: {problem}
+Student's response: {student_response}
+
+Your task is to analyze the student's response for patterns that might indicate specific learning disabilities. Look for:
+- Reading and language processing patterns
+- Mathematical reasoning and calculation errors
+- Attention and focus indicators
+- Visual-spatial processing issues
+- Working memory challenges
+- Executive function difficulties
+
+Be thorough but cautious - you are identifying POTENTIAL indicators, not making definitive diagnoses.
+
+Analyze the student's response and provide insights in this JSON format:
+
+{{
+  "potential_disabilities": [
+    {{
+      "disability": "<Name of potential disability>",
+      "confidence": "<high/medium/low>",
+      "indicators": [
+        "<Specific pattern or behavior that suggests this disability>",
+        "<Another indicator>"
+      ],
+      "explanation": "<Why these patterns suggest this disability>"
+    }}
+  ],
+  "error_patterns": [
+    "<Pattern 1: Type of errors made>",
+    "<Pattern 2: Another error pattern>"
+  ],
+  "strengths_observed": [
+    "<Positive aspect of the student's approach>",
+    "<Another strength>"
+  ],
+  "recommendations": [
+    "<Immediate recommendation for support>",
+    "<Assessment recommendation>",
+    "<Teaching strategy recommendation>"
+  ],
+  "professional_consultation": "<When to recommend professional evaluation>"
+}}
+"""
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        content = response.choices[0].message.content
+        
+        # Clean and parse the JSON response
+        json_data = clean_json_response(content)
+        
+        return Response(content=json.dumps(json_data), media_type="application/json")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error while analyzing student response: {str(e)}")
