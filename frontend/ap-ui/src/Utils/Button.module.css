@@ -1,23 +1,25 @@
 .genericButton {
-    padding: 14px 24px;
-    margin: 6px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
+    padding: var(--space-4) var(--space-6);
+    margin: var(--space-2);
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-sm);
     font-weight: 600;
-    color: #475569;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
+    color: var(--color-secondary-700);
+    border: 2px solid var(--color-secondary-200);
+    border-radius: var(--radius-xl);
     cursor: pointer;
-    transition: all 0.3s ease;
-    background: white;
+    transition: var(--transition-slow);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-3);
     min-height: 48px;
     position: relative;
     overflow: hidden;
     letter-spacing: 0.025em;
     text-transform: uppercase;
+    box-shadow: var(--shadow-sm);
 }
 
 .genericButton::before {
@@ -36,49 +38,60 @@
 }
 
 .genericButton:hover {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
+    border-color: var(--color-secondary-300);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+    color: var(--color-primary-700);
 }
 
 .disabled {
-    background-color: #f1f5f9;
-    color: #94a3b8;
-    border-color: #e2e8f0;
+    background-color: var(--color-secondary-100);
+    color: var(--color-secondary-400);
+    border-color: var(--color-secondary-200);
     pointer-events: none;
     cursor: not-allowed;
     opacity: 0.6;
+    transform: none;
+    box-shadow: none;
 }
 
 .buttonActive {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
     color: white;
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    border-color: var(--color-primary-500);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
 }
 
 .buttonActive:hover {
-    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-accent-purple-dark) 100%);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-2xl);
 }
 
 .buttonIcon {
-    font-size: 1.125rem;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    font-size: var(--font-size-lg);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: var(--transition-base);
 }
 
 .buttonText {
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     letter-spacing: 0.05em;
+    font-family: var(--font-family-primary);
 }
 
 @media (max-width: 768px) {
     .genericButton {
-        padding: 10px 16px;
-        font-size: 13px;
-        margin: 2px;
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--font-size-xs);
+        margin: var(--space-1);
+        min-height: 40px;
+    }
+    
+    .buttonIcon {
+        font-size: var(--font-size-base);
     }
 }

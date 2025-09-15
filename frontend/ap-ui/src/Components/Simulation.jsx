@@ -23,13 +23,12 @@ export default function Simulation() {
         try {
             setIsLoading(true);
             const disability = DisabilitiesEnum[id];
-            const result = await fetch(`http://localhost:8000/api/v1/openai/generate_conversation?disability=${disability}`);
-            if (!result.ok) {
-                console.error("Error generating conversation");
-                return;
-            }
-            const response = await result.json();
-            setSimulationData(response);
+            // This endpoint is not implemented; show placeholder content
+            setSimulationData({
+                title: `Simulation for ${disability}`,
+                scenario: "This simulation feature is coming soon.",
+                conversation: []
+            });
         } catch (error) {
             console.error("Error generating conversation", error);
         } finally {

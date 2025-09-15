@@ -27,14 +27,11 @@ def clean_json_response(content):
             return json.loads(json_match.group())
         raise ValueError("No valid JSON found in response")
 
-# Global variables to store intermediate results
-approach = ""
-thought = ""
-strategies = ""
-problem=""
+"""
+Stateless LLM helpers. Each function receives needed context via parameters.
+"""
 
 async def Problem(grade_level="7th", difficulty="medium"):
-    global approach, thought, strategies
     prompt = f"""
 You are an expert mathematics educator specializing in creating age-appropriate word problems for students with learning disabilities. You understand the cognitive development stages and can create problems that are challenging yet accessible.
 
@@ -79,11 +76,6 @@ Format your output as JSON in the following structure:
         
         # Clean and parse the JSON response
         json_data = clean_json_response(content)
-        
-        # Reset globals for new problem
-        approach = ""
-        thought = ""
-        strategies = ""
         
         return Response(content=json.dumps(json_data), media_type="application/json")
     except Exception as e:
@@ -226,14 +218,13 @@ Output your response in this JSON format:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while generating approach: {str(e)}")
 
-async def Thought(disability: str, problem: str):
-    global approach, thought
+async def Thought(disability: str, problem: str, student_attempt: str):
     prompt = f"""
 You are an expert educational psychologist and learning disability specialist with extensive experience in analyzing student work and understanding how different learning disabilities manifest in mathematical problem-solving.
 
 The student has {disability} and was given this problem: {problem}
 
-Their approach was: {approach}
+Student's attempt (think-aloud/steps): {student_attempt}
 
 Your task is to provide a comprehensive, evidence-based analysis of the student's thinking process. Focus on:
 
@@ -276,15 +267,14 @@ Provide a detailed analysis in this JSON format:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while generating thought: {str(e)}")
 
-async def Strategies(disability: str, problem: str):
-    global approach, thought, strategies
+async def Strategies(disability: str, problem: str, student_attempt: str = "", thought_analysis: str = ""):
     prompt = f"""
 You are a highly experienced special education teacher and learning disability specialist with expertise in evidence-based instructional strategies. You have worked with hundreds of students with various learning disabilities and understand how to adapt teaching methods to meet individual needs.
 
 Problem: {problem}
 Student's disability: {disability}
-Student's approach: {approach}
-Student's thought process: {thought}
+Student's approach: {student_attempt}
+Teacher analysis: {thought_analysis}
 
 Your task is to provide comprehensive, research-based teaching strategies that are specifically tailored to this student's disability and the challenges they demonstrated in their approach. Focus on:
 
@@ -340,15 +330,13 @@ Provide comprehensive teaching strategies in this JSON format:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while generating strategies: {str(e)}")
 
-async def Tutor(disability: str, problem: str):
-    global approach, thought, strategies
+async def Tutor(disability: str, problem: str, student_attempt: str = "", thought_analysis: str = ""):
     prompt = f"""
 You are an experienced, patient, and skilled tutor who specializes in working with students with learning disabilities. You have a deep understanding of {disability} and how it affects learning, and you use evidence-based teaching methods to help students succeed.
 
 Problem: {problem}
-Student's approach: {approach}
-Student's thoughts: {thought}
-Available strategies: {strategies}
+Student's approach: {student_attempt}
+Teacher analysis: {thought_analysis}
 
 Your tutoring style should be:
 - Patient and encouraging
@@ -372,6 +360,8 @@ Create a realistic 10-12 exchange tutoring conversation that implements effectiv
 
 Make the student's responses realistic - they may be hesitant, confused, or make mistakes initially, but should show progress with guidance.
 
+Also, provide a concise test question to check the student's understanding now. Make it one step, clearly phrased, and USE THE SAME REAL-WORLD CONTEXT as the original problem. Do not introduce a new scenario. Prefer keeping the same numbers; if you change numbers, vary only slightly (≤ 20%) while preserving the same structure and concept. Provide the correct expected answer.
+
 Format as JSON:
 {{
 "conversation": [
@@ -388,6 +378,9 @@ Format as JSON:
     "<Activity to reinforce learning>",
     "<Another follow-up suggestion>"
 ]
+],
+  "test_question": "<A short single-question check for understanding>",
+  "expected_answer": "<Expected correct answer to the test question>"
 }}
 """
     try:
@@ -470,3 +463,63 @@ Analyze the student's response and provide insights in this JSON format:
         return Response(content=json.dumps(json_data), media_type="application/json")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while analyzing student response: {str(e)}")
+
+async def chat_with_ai(user_message, chat_mode="tutor", personality="helpful", conversation_history=[]):
+    """Chat with AI tutor based on mode and personality"""
+    try:
+        # Define personality prompts
+        personality_prompts = {
+            "helpful": "You are a patient and encouraging math tutor. Be supportive and break down complex concepts into simple steps.",
+            "challenging": "You are a challenging mentor who pushes critical thinking. Ask probing questions and encourage deeper analysis.",
+            "friendly": "You are a friendly and approachable guide. Use casual language and make learning fun and engaging.",
+            "expert": "You are an expert professor with deep technical knowledge. Provide detailed explanations and advanced insights."
+        }
+        
+        # Define mode-specific instructions
+        mode_instructions = {
+            "tutor": "Help the student with math problems, explain concepts, and provide step-by-step guidance. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
+            "explain": "Focus on explaining mathematical concepts clearly with examples and analogies. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
+            "practice": "Generate practice problems and provide feedback on solutions. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
+            "debug": "Help identify and fix errors in mathematical solutions and reasoning. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it."
+        }
+        
+        # Build conversation context
+        conversation_context = ""
+        if conversation_history:
+            conversation_context = "\n".join([
+                f"{msg.get('sender', 'user')}: {msg.get('content', '')}" 
+                for msg in conversation_history[-10:]  # Last 10 messages for context
+            ])
+        
+        # Create the prompt
+        prompt = f"""
+{personality_prompts.get(personality, personality_prompts["helpful"])}
+
+{mode_instructions.get(chat_mode, mode_instructions["tutor"])}
+
+Previous conversation:
+{conversation_context}
+
+Current user message: {user_message}
+
+IMPORTANT: When the user asks for a "question", "problem", or "question to solve", provide ONLY the problem statement without the solution. Only provide the solution if they specifically ask you to "solve it", "show the solution", or "explain how to solve it".
+
+Respond as a helpful AI tutor. Be conversational, educational, and engaging. If the user asks for a math problem, provide one WITHOUT the solution unless they specifically ask for the solution. If they ask for explanations, break it down clearly. Keep responses concise but informative.
+"""
+        
+        # Call OpenAI API
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": prompt}
+            ],
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        content = response.choices[0].message.content.strip()
+        
+        return {"response": content, "personality": personality, "mode": chat_mode}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in chat: {str(e)}")

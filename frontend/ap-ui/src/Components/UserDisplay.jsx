@@ -3,23 +3,38 @@ import { Route,Routes } from "react-router-dom";
 import Navigation from "./Navigation";
 import Details from "./Details";
 import Problem from "./Problem";
+import MultiStudentSimulation from "./MultiStudentSimulation";
+import AdaptiveDifficulty from "./AdaptiveDifficulty";
+import InteractiveWhiteboard from "./InteractiveWhiteboard";
+import AIProblemGenerator from "./AIProblemGenerator";
+// import AnalyticsDashboard from "./AnalyticsDashboard";
+import AITutorChat from "./AITutorChat";
 export default function UserDisplay(){
     return(
         <div className={classes.displayContainer}>
-            <div className={classes.header}>
+            <a href="#main-content" className="skip-to-main">
+                Skip to main content
+            </a>
+            <header className={classes.header} role="banner">
                 <h1>Learning Disability Simulation Dashboard</h1>
-                <p>Explore how different learning disabilities affect math problem-solving and discover effective teaching strategies</p>
-            </div>
+                <p className={classes.subtitle}>Explore how different learning disabilities affect math problem-solving and discover effective teaching strategies</p>
+            </header>
             <div className={classes.routeContainer}>
-                <div className={classes.navigation}>
+                <nav className={classes.navigation} role="navigation" aria-label="Main navigation">
                     <Navigation />
-                </div>
-                <div className={classes.content}>
-                    <Problem />
+                </nav>
+                <main className={classes.content} id="main-content" role="main">
                     <Routes>
+                        <Route path="/" element={<Problem />} />
                         <Route path="disability/:id/details/*" element={<Details/>} />
+                        <Route path="multi-simulation" element={<MultiStudentSimulation/>} />
+                        <Route path="adaptive-difficulty" element={<AdaptiveDifficulty/>} />
+                        <Route path="whiteboard" element={<InteractiveWhiteboard/>} />
+                        <Route path="ai-problem-generator" element={<AIProblemGenerator/>} />
+                        {/* <Route path="analytics-dashboard" element={<AnalyticsDashboard/>} /> */}
+                        <Route path="ai-tutor-chat" element={<AITutorChat/>} />
                     </Routes>
-                </div>
+                </main>
             </div>
         </div>
     )

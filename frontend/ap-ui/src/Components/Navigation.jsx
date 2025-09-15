@@ -1,7 +1,7 @@
 import classes from './Navigation.module.css'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
-import DisabilityIdentifier from './DisabilityIdentifier';
+import DisabilityIdentifierModal from './DisabilityIdentifierModal';
 
 export default function Navigation(){
     const [selectedDisabilityID, setSelectedDisabilityID] = useState('');
@@ -17,13 +17,13 @@ export default function Navigation(){
     const navigate = useNavigate();
     
     const disabilities = [
-        {id: '1', name: 'Dyslexia', icon: '📖', description: 'Reading difficulties'},
-        {id: '2', name: 'Dysgraphia', icon: '✍️', description: 'Writing difficulties'},
-        {id: '3', name: 'Dyscalculia', icon: '🔢', description: 'Math difficulties'},
-        {id: '4', name: 'ADHD', icon: '⚡', description: 'Attention & hyperactivity'},
-        {id: '5', name: 'APD', icon: '👂', description: 'Auditory processing'},
-        {id: '6', name: 'NVLD', icon: '👁️', description: 'Non-verbal learning'},
-        {id: '7', name: 'LPD', icon: '💬', description: 'Language processing'}
+        {id: '1', name: 'Dyslexia', icon: '📚', description: 'Reading & language processing difficulties'},
+        {id: '2', name: 'Dysgraphia', icon: '✒️', description: 'Writing & fine motor skill challenges'},
+        {id: '3', name: 'Dyscalculia', icon: '🧮', description: 'Mathematical reasoning difficulties'},
+        {id: '4', name: 'ADHD', icon: '🎯', description: 'Attention & hyperactivity disorder'},
+        {id: '5', name: 'APD', icon: '🎧', description: 'Auditory processing difficulties'},
+        {id: '6', name: 'NVLD', icon: '🧩', description: 'Non-verbal learning challenges'},
+        {id: '7', name: 'LPD', icon: '🗣️', description: 'Language processing difficulties'}
     ]
     
     function setDisability(id) {
@@ -37,8 +37,20 @@ export default function Navigation(){
     
     return(
         <div className={classes.NavigationContainer}>
-            <ul className={classes.NavigationList}>
-                <li className={`${classes.NavigationItem} ${classes.NavigationHeader}`}>
+            <div className={classes.problemGeneratorSection}>
+                <button 
+                    className={classes.problemGeneratorButton}
+                    onClick={() => navigate('/')}
+                    aria-label="Go to Math Problem Generator - the main starting point"
+                >
+                    <span className={classes.buttonIcon} aria-hidden="true">📚</span>
+                    <span>Math Problem Generator</span>
+                    <span className={classes.buttonSubtext}>Start Here</span>
+                </button>
+            </div>
+            
+            <ul className={classes.NavigationList} aria-label="Learning disability types">
+                <li className={`${classes.NavigationItem} ${classes.NavigationHeader}`} role="heading" aria-level="2">
                     Learning Disabilities
                 </li>
                 {disabilities.map((disability) => (
@@ -46,10 +58,22 @@ export default function Navigation(){
                         key={disability.id} 
                         className={`${classes.NavigationItem} ${selectedDisabilityID === disability.id ? classes.selectedItem : ''}`}
                         onClick={() => setDisability(disability.id)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Select ${disability.name}: ${disability.description}`}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setDisability(disability.id);
+                            }
+                        }}
                     >
                         <div className={classes.disabilityName}>
                             <span className={classes.disabilityIcon}>{disability.icon}</span>
-                            {disability.name}
+                            <div className={classes.disabilityInfo}>
+                                <span className={classes.disabilityTitle}>{disability.name}</span>
+                                <span className={classes.disabilityDesc}>{disability.description}</span>
+                            </div>
                         </div>
                         <div className={classes.arrow}>
                             {selectedDisabilityID === disability.id ? '→' : '›'}
@@ -61,15 +85,61 @@ export default function Navigation(){
             <div className={classes.identifierSection}>
                 <button 
                     className={classes.identifierButton}
-                    onClick={() => setShowIdentifier(!showIdentifier)}
+                    onClick={() => setShowIdentifier(true)}
+                    aria-label="Open disability identifier tool to help identify learning disabilities"
                 >
-                    🔍 Disability Identifier
+                    <span className={classes.buttonIcon} aria-hidden="true">🔍</span>
+                    <span>Disability Identifier</span>
                 </button>
-                {showIdentifier && (
-                    <div className={classes.identifierPanel}>
-                        <DisabilityIdentifier />
-                    </div>
-                )}
+                <DisabilityIdentifierModal 
+                    isOpen={showIdentifier} 
+                    onClose={() => setShowIdentifier(false)} 
+                />
+            </div>
+            
+            <div className={classes.simulationSection}>
+                <button 
+                    className={classes.simulationButton}
+                    onClick={() => navigate('/multi-simulation')}
+                >
+                    <span className={classes.buttonIcon}>👥</span>
+                    <span>Multi-Student Simulation</span>
+                </button>
+                <button 
+                    className={classes.adaptiveButton}
+                    onClick={() => navigate('/adaptive-difficulty')}
+                >
+                    <span className={classes.buttonIcon}>🎯</span>
+                    <span>Adaptive Difficulty</span>
+                </button>
+                <button 
+                    className={classes.whiteboardButton}
+                    onClick={() => navigate('/whiteboard')}
+                >
+                    <span className={classes.buttonIcon}>🎨</span>
+                    <span>Interactive Whiteboard</span>
+                </button>
+                <button 
+                    className={classes.navButton}
+                    onClick={() => navigate('/ai-problem-generator')}
+                >
+                    <span className={classes.buttonIcon}>🤖</span>
+                    <span>AI Problem Generator</span>
+                </button>
+                {/* <button 
+                    className={classes.navButton}
+                    onClick={() => navigate('/analytics-dashboard')}
+                >
+                    <span className={classes.buttonIcon}>📊</span>
+                    <span>Analytics Dashboard</span>
+                </button> */}
+                <button 
+                    className={classes.navButton}
+                    onClick={() => navigate('/ai-tutor-chat')}
+                >
+                    <span className={classes.buttonIcon}>💬</span>
+                    <span>AI Tutor Chat</span>
+                </button>
             </div>
         </div>
     )

@@ -16,7 +16,7 @@ export default function Problem(){
 
     useEffect(() => {
         generateProblem();
-    }, [])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     async function generateProblem(){
         setIsLoading(true);
@@ -52,6 +52,8 @@ export default function Problem(){
             sessionStorage.setItem("problem", jsonResponse.problem);
             sessionStorage.setItem("answer", jsonResponse.answer);
             sessionStorage.setItem("approach", jsonResponse.solution);
+            sessionStorage.setItem("difficulty", selectedDifficulty);
+            sessionStorage.setItem("gradeLevel", gradeLevel);
             
             setProblem(jsonResponse.problem);
             setAnswer(jsonResponse.answer);
@@ -72,6 +74,21 @@ export default function Problem(){
                 <div className={classes.title}>
                     <div className={classes.icon}>📚</div>
                     Math Problem Generator
+                </div>
+                <div className={classes.ctaText}>
+                    <div className={classes.ctaTitle}>🎯 Start Here: Generate Your Math Problem</div>
+                    <div className={classes.ctaDescription}>
+                        <strong>Step 1:</strong> Generate a math problem, then select a learning disability to see how students with different needs would approach it.
+                    </div>
+                    <div className={classes.ctaSteps}>
+                        <div className={classes.step}>1️⃣ Generate Problem</div>
+                        <div className={classes.arrow}>→</div>
+                        <div className={classes.step}>2️⃣ Select Disability</div>
+                        <div className={classes.arrow}>→</div>
+                        <div className={classes.step}>3️⃣ View Simulation</div>
+                        <div className={classes.arrow}>→</div>
+                        <div className={classes.step}>4️⃣ See Analysis</div>
+                    </div>
                 </div>
                 <div className={classes.controls}>
                     <div className={classes.gradeSelector}>
@@ -146,13 +163,13 @@ export default function Problem(){
                         </div>
                     )}
                     
-                    <div className={classes.section}>
-                        <div className={classes.sectionTitle}>Correct Answer</div>
+                    <details className={classes.section}>
+                        <summary className={classes.sectionTitle}>Reveal Correct Answer</summary>
                         <div className={classes.sectionContent}>{answer}</div>
-                    </div>
+                    </details>
                     
-                    <div className={classes.section}>
-                        <div className={classes.sectionTitle}>Solution Approach</div>
+                    <details className={classes.section}>
+                        <summary className={classes.sectionTitle}>Reveal Solution Approach</summary>
                         <div className={classes.solutionSteps}>
                             {approach.split('\n').map((step, index) => {
                                 // Clean up the step and check if it's a numbered step
@@ -177,7 +194,7 @@ export default function Problem(){
                                 return null;
                             })}
                         </div>
-                    </div>
+                    </details>
                 </>
             )}
         </div>
