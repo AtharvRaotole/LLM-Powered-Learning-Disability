@@ -107,21 +107,49 @@ npm start
 
 ## 🔧 API Endpoints
 
-### Core Endpoints
-- `GET /api/v1/openai/` - Health check
-- `POST /api/v1/openai/generate-questions` - Generate AI-powered questions
-- `POST /api/v1/openai/analyze-responses` - Analyze student responses
-- `GET /api/v1/openai/questions` - Retrieve question database
+### LangGraph Workflows (v2)
+- `POST /api/v2/langgraph/full-workflow` – generate the entire learning workflow in a single call
+- `POST /api/v2/langgraph/generate-problem` – create a problem preview for selected grade/difficulty
+- `POST /api/v2/langgraph/analysis` – run analysis on existing problem/attempt data
+- `POST /api/v2/langgraph/workflow` – dynamic endpoint that respects the `workflow_type` in the payload
 
-### Example API Usage
+Each response includes a `results` object (problem, student simulation, thought analysis, strategies, tutor session, consistency report, etc.), plus `metadata.cache_status` to indicate when LangGraph returned cached values.
+
+### Legacy Endpoints (v1)
+Legacy `/api/v1/openai/*` routes remain available for custom tools (e.g., chat, topic-specific prompts). They now sit alongside the LangGraph router so existing features continue to work while the UI migrates to v2.
+
+### Example LangGraph Usage
 ```python
 import requests
 
-# Generate questions
-response = requests.post('http://localhost:8000/api/v1/openai/generate-questions', 
-                        json={"topic": "fractions", "difficulty": "intermediate"})
-questions = response.json()
+payload = {
+    "grade_level": "7th",
+    "difficulty": "medium",
+    "disability": "Dyslexia",
+    "workflow_type": "analysis_only",
+    "problem": "A class of 24 students..."
+}
+
+response = requests.post(
+    'http://localhost:8000/api/v2/langgraph/workflow',
+    json=payload,
+    timeout=60
+)
+workflow = response.json()
+print(workflow["results"].keys())
 ```
+
+### LangGraph Cache Configuration
+
+Caching is enabled by default to avoid repeated LLM calls for identical requests. Configure via environment variables before starting the backend:
+
+```
+LANGGRAPH_CACHE_ENABLED=true   # set to false to bypass caching
+LANGGRAPH_CACHE_TTL=600        # cache lifetime in seconds
+LANGGRAPH_CACHE_SIZE=128       # max number of entries retained
+```
+
+The frontend also keeps a per-session analysis cache in `sessionStorage` to avoid redundant network calls while navigating across steps.
 
 ## 🛠️ Development
 

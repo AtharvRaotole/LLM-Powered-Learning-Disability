@@ -1,33 +1,28 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import classes from "./AdaptiveDifficulty.module.css";
 import SessionManager from "../Utils/SessionManager";
+import { runLangGraphWorkflow } from "../Utils/langgraphApi";
 
 export default function AdaptiveDifficulty() {
-    const navigate = useNavigate();
     const [studentHistory, setStudentHistory] = useState([]);
     const [currentDifficulty, setCurrentDifficulty] = useState("medium");
     const [recommendation, setRecommendation] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    // const [simulatedSessions, setSimulatedSessions] = useState([]);
 
     useEffect(() => {
         loadStudentHistory();
         
-        // Listen for storage changes to reload data when sessions are added
         const handleStorageChange = (e) => {
             if (e.key === 'learningDisabilitySessions') {
-                console.log('Storage changed, reloading history...');
                 loadStudentHistory();
             }
         };
-        
+
         window.addEventListener('storage', handleStorageChange);
-        
-        // Also reload when the component becomes visible (user navigates back)
+
         const handleVisibilityChange = () => {
             if (!document.hidden) {
-                console.log('Page became visible, reloading history...');
                 loadStudentHistory();
             }
         };
@@ -41,12 +36,7 @@ export default function AdaptiveDifficulty() {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     async function loadStudentHistory() {
-        // Load real session data from SessionManager
         const realHistory = SessionManager.getAllSessions();
-        console.log('Loading student history:', realHistory);
-        console.log('Number of sessions found:', realHistory.length);
-        console.log('Raw localStorage data:', localStorage.getItem('learningDisabilitySessions'));
-        
         setStudentHistory(realHistory);
     }
 
@@ -54,26 +44,25 @@ export default function AdaptiveDifficulty() {
     async function getAdaptiveRecommendation() {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:8000/api/v1/openai/adaptive_difficulty', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    student_history: studentHistory,
-                    current_difficulty: currentDifficulty
-                })
+            const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
+            const payload = {
+                grade_level: gradeLevel,
+                difficulty: currentDifficulty,
+                disability: 'No disability',
+                student_history: studentHistory,
+                problem: sessionStorage.getItem('problem') || 'Placeholder problem for adaptive planning.',
+            };
+
+            const data = await runLangGraphWorkflow({
+                ...payload,
+                workflow_type: 'analysis_only',
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to get adaptive recommendation');
+            const adaptivePlan = data?.results?.adaptive_plan;
+            if (!adaptivePlan) {
+                throw new Error('Adaptive plan missing from workflow results');
             }
-
-            const data = await response.json();
-            setRecommendation(data);
+            setRecommendation(adaptivePlan);
         } catch (error) {
-            console.error('Error getting adaptive recommendation:', error);
-            // Fallback to mock recommendation
             setRecommendation(generateMockRecommendation());
         } finally {
             setIsLoading(false);
@@ -82,12 +71,28 @@ export default function AdaptiveDifficulty() {
 
     function generateMockRecommendation() {
         const recentSessions = studentHistory.slice(0, 5);
-        const avgConsistency = recentSessions.reduce((sum, s) => sum + s.consistency_score, 0) / recentSessions.length;
+        if (recentSessions.length === 0) {
+            return {
+                recommended_difficulty: currentDifficulty,
+                reasoning: "No session history yet. Stay at the current level until more data is collected.",
+                confidence: 0.3,
+                current_performance: {
+                    consistency_score: 0,
+                    accuracy_rate: 0,
+                    trend: "insufficient_data"
+                },
+                recommendations: [
+                    "Complete a few tutor sessions to unlock adaptive guidance"
+                ]
+            };
+        }
+
+        const avgConsistency = recentSessions.reduce((sum, s) => sum + (s.consistency_score || 0), 0) / recentSessions.length;
         const avgAccuracy = recentSessions.reduce((sum, s) => sum + (s.is_correct ? 1 : 0), 0) / recentSessions.length;
-        
+
         let recommendedDifficulty = currentDifficulty;
         let reasoning = "Performance is appropriate for current level.";
-        
+
         if (avgConsistency > 0.7 && avgAccuracy > 0.8) {
             recommendedDifficulty = currentDifficulty === "easy" ? "medium" : currentDifficulty === "medium" ? "hard" : "hard";
             reasoning = "Excellent performance! Ready for more challenging problems.";
@@ -118,37 +123,6 @@ export default function AdaptiveDifficulty() {
         SessionManager.clearAllSessions();
         setStudentHistory([]);
         setRecommendation(null);
-    }
-
-    function createTestSession() {
-        console.log('Creating test session...');
-        try {
-            // Create a test session to verify the system is working
-            const testSession = {
-                difficulty: 'medium',
-                gradeLevel: '7th',
-                disability: 'Dyslexia',
-                consistency_score: 0.75,
-                is_correct: true,
-                problem: 'Test problem: What is 15 + 27?',
-                duration: 120,
-                timestamp: Date.now(),
-                student_attempt: 'Test student attempt',
-                diagnosis: 'Test diagnosis',
-                tutor_response: 'Test tutor response',
-                test_attempt: null,
-                consistency_results: { overall_consistency_score: 0.75 },
-                has_test_question: false
-            };
-            
-            console.log('About to save test session:', testSession);
-            const savedSession = SessionManager.saveSession(testSession);
-            console.log('Test session created:', savedSession);
-            console.log('localStorage after test save:', localStorage.getItem('learningDisabilitySessions'));
-            loadStudentHistory(); // Reload to show the new session
-        } catch (error) {
-            console.error('Error creating test session:', error);
-        }
     }
 
     function getDifficultyColor(difficulty) {
@@ -214,13 +188,6 @@ export default function AdaptiveDifficulty() {
                         onClick={clearHistory}
                     >
                         🗑️ Clear History
-                    </button>
-                    
-                    <button 
-                        className={classes.testBtn}
-                        onClick={createTestSession}
-                    >
-                        🧪 Add Test Session
                     </button>
                 </div>
             </div>
@@ -305,12 +272,12 @@ export default function AdaptiveDifficulty() {
                         <div className={classes.emptyText}>
                             Complete a student simulation to see adaptive difficulty analysis and performance insights.
                         </div>
-                        <button 
+                        <Link 
                             className={classes.simulateBtn}
-                            onClick={() => navigate('/')}
+                            to="/"
                         >
                             📚 Generate Math Problem
-                        </button>
+                        </Link>
                     </div>
                 ) : (
                     <div className={classes.sessionsList}>
@@ -343,61 +310,118 @@ export default function AdaptiveDifficulty() {
                 )}
             </div>
 
-            {/* Performance Chart */}
             <div className={classes.chartSection}>
-                <h3>Performance Trends</h3>
+                <h3>Result Breakdown</h3>
                 {studentHistory.length > 0 ? (
-                    <div className={classes.chartContainer}>
-                        <div className={classes.chartHeader}>
-                            <div className={classes.chartTitle}>Consistency & Accuracy Over Time</div>
-                            <div className={classes.chartSubtitle}>Last {Math.min(studentHistory.length, 10)} sessions</div>
-                        </div>
-                        <div className={classes.chartBars}>
-                            {studentHistory.slice(0, 10).map((session, index) => (
-                                <div key={session.id || index} className={classes.chartBar}>
-                                    <div className={classes.barContainer}>
-                                        <div 
-                                            className={classes.consistencyBar}
-                                            style={{ 
-                                                height: `${(session.consistency_score || 0) * 100}%`,
-                                                backgroundColor: session.consistency_score > 0.7 ? '#10b981' : 
-                                                               session.consistency_score > 0.4 ? '#f59e0b' : '#ef4444'
-                                            }}
-                                        ></div>
-                                        <div 
-                                            className={classes.accuracyBar}
-                                            style={{ 
-                                                height: `${(session.is_correct ? 1 : 0) * 100}%`,
-                                                backgroundColor: session.is_correct ? '#10b981' : '#ef4444'
-                                            }}
-                                        ></div>
-                                    </div>
-                                    <div className={classes.barLabel}>
-                                        <div className={classes.sessionNumber}>#{index + 1}</div>
-                                        <div className={classes.sessionDifficulty}>{session.difficulty}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className={classes.chartLegend}>
-                            <div className={classes.legendItem}>
-                                <div className={classes.legendColor} style={{backgroundColor: '#10b981'}}></div>
-                                <span>Consistency Score</span>
-                            </div>
-                            <div className={classes.legendItem}>
-                                <div className={classes.legendColor} style={{backgroundColor: '#3b82f6'}}></div>
-                                <span>Accuracy (Correct/Incorrect)</span>
-                            </div>
-                        </div>
-                    </div>
+                    <PerformanceSummary sessions={studentHistory} />
                 ) : (
                     <div className={classes.chartPlaceholder}>
                         <div className={classes.chartIcon}>📈</div>
-                        <div className={classes.chartText}>Performance trend visualization</div>
-                        <div className={classes.chartSubtext}>Complete some sessions to see your performance trends</div>
+                        <div className={classes.chartText}>No Results Yet</div>
+                        <div className={classes.chartSubtext}>Complete some sessions to see result breakdown</div>
                     </div>
                 )}
             </div>
         </div>
     );
+}
+
+function PerformanceSummary({ sessions }) {
+    const total = sessions.length;
+
+    if (!total) {
+        return (
+            <div className={classes.chartPlaceholder}>
+                <div className={classes.chartIcon}>📈</div>
+                <div className={classes.chartText}>No Results Yet</div>
+                <div className={classes.chartSubtext}>Complete some sessions to see result breakdown</div>
+            </div>
+        );
+    }
+
+    const stats = [
+        { label: 'Correct', count: sessions.filter((s) => s.is_correct === true).length, color: '#16a34a' },
+        { label: 'Incorrect', count: sessions.filter((s) => s.is_correct === false).length, color: '#ef4444' },
+    ];
+
+    const unknownCount = total - stats[0].count - stats[1].count;
+    if (unknownCount > 0) {
+        stats.push({ label: 'No Result', count: unknownCount, color: '#94a3b8' });
+    }
+
+    let cumulativeAngle = 0;
+    const radius = 70;
+    const center = 80;
+
+    const slices = stats
+        .filter((segment) => segment.count > 0)
+        .map((segment, index) => {
+            const startAngle = cumulativeAngle;
+            const angle = (segment.count / total) * 360;
+            cumulativeAngle += angle;
+            const endAngle = cumulativeAngle;
+
+            return {
+                ...segment,
+                percentage: ((segment.count / total) * 100).toFixed(0),
+                path: describeArc(center, center, radius, startAngle, endAngle),
+                animationDelay: `${index * 80}ms`,
+            };
+        });
+
+    return (
+        <div className={classes.summaryGrid}>
+            <svg
+                className={classes.pieSvg}
+                viewBox="0 0 160 160"
+                role="img"
+                aria-label="Session outcome distribution"
+            >
+                <circle cx={center} cy={center} r={radius} className={classes.pieBackground} />
+                {slices.map((slice) => (
+                    <path
+                        key={slice.label}
+                        d={slice.path}
+                        fill={slice.color}
+                        className={classes.pieSlice}
+                        style={{ animationDelay: slice.animationDelay }}
+                    />
+                ))}
+                <circle cx={center} cy={center} r={radius - 26} className={classes.pieInner} />
+                <text x={center} y={center - 4} className={classes.pieTotal} textAnchor="middle">
+                    {total}
+                </text>
+                <text x={center} y={center + 16} className={classes.pieSubtext} textAnchor="middle">
+                    sessions
+                </text>
+            </svg>
+            <div className={classes.pieLegend}>
+                {slices.map((slice) => (
+                    <div key={slice.label} className={classes.legendRow}>
+                        <span className={classes.legendSwatch} style={{ background: slice.color }}></span>
+                        <span className={classes.legendLabel}>{slice.label}</span>
+                        <span className={classes.legendValue}>
+                            {slice.count} ({slice.percentage}%)
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+    return {
+        x: centerX + radius * Math.cos(angleInRadians),
+        y: centerY + radius * Math.sin(angleInRadians),
+    };
+}
+
+function describeArc(x, y, radius, startAngle, endAngle) {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+    return [`M`, start.x, start.y, `A`, radius, radius, 0, largeArcFlag, 0, end.x, end.y, `L`, x, y, `Z`].join(' ');
 }

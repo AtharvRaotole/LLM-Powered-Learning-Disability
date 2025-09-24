@@ -1,5 +1,6 @@
 import { useState } from "react";
 import classes from "./DisabilityIdentifier.module.css";
+import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
 
 export default function DisabilityIdentifier() {
     const [problem, setProblem] = useState('');
@@ -19,23 +20,18 @@ export default function DisabilityIdentifier() {
         setAnalysis(null);
 
         try {
-            const response = await fetch("http://localhost:8000/api/v1/openai/identify_disability", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    problem: problem,
-                    student_response: studentResponse
-                })
+            const result = await getOrRunFullWorkflow({
+                grade_level: sessionStorage.getItem('gradeLevel') || '7th',
+                difficulty: sessionStorage.getItem('difficulty') || 'medium',
+                disability: 'No disability',
+                problem: problem,
+                student_response: studentResponse,
             });
-
-            if (!response.ok) {
-                throw new Error("Failed to analyze student response");
+            const analysisData = result?.results?.disability_analysis;
+            if (!analysisData) {
+                throw new Error("Disability analysis missing from workflow results");
             }
-
-            const jsonResponse = await response.json();
-            setAnalysis(jsonResponse);
+            setAnalysis(analysisData);
         } catch (err) {
             console.error("Error:", err);
             setError("Failed to analyze response. Please try again.");

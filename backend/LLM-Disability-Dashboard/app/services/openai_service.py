@@ -1,6 +1,8 @@
 import os
 import json
 import re
+from itertools import chain
+
 from dotenv import load_dotenv
 from fastapi import HTTPException, Response
 from openai import OpenAI
@@ -10,22 +12,43 @@ load_dotenv()
 # Initialize OpenAI client directly
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def clean_json_response(content):
-    """Extract JSON from markdown code blocks and clean it"""
-    # Remove markdown code blocks
-    content = re.sub(r'```json\s*', '', content)
-    content = re.sub(r'```\s*$', '', content)
+
+def clean_json_response(content: str):
+    """Extract the first valid JSON object from an LLM response."""
+
+    content = re.sub(r"```json\s*", "", content, flags=re.IGNORECASE)
+    content = re.sub(r"```", "", content)
     content = content.strip()
-    
-    # Try to parse as JSON
+
+    if not content:
+        raise ValueError("Empty response from LLM")
+
+    decoder = json.JSONDecoder()
+
     try:
-        return json.loads(content)
+        obj, _ = decoder.raw_decode(content)
+        return obj
     except json.JSONDecodeError:
-        # If parsing fails, try to find JSON within the content
-        json_match = re.search(r'\{.*\}', content, re.DOTALL)
-        if json_match:
+        pass
+
+    brace_indices = [m.start() for m in re.finditer(r"\{", content)]
+    for start in chain(brace_indices, [None]):
+        if start is None:
+            break
+        try:
+            obj, _ = decoder.raw_decode(content[start:])
+            return obj
+        except json.JSONDecodeError:
+            continue
+
+    json_match = re.search(r"\{.*\}", content, re.DOTALL)
+    if json_match:
+        try:
             return json.loads(json_match.group())
-        raise ValueError("No valid JSON found in response")
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError("No valid JSON found in response")
 
 """
 Stateless LLM helpers. Each function receives needed context via parameters.

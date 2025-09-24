@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 from fastapi import HTTPException, Response
 
 class AdaptiveDifficultyManager:
@@ -26,198 +26,147 @@ class AdaptiveDifficultyManager:
         if not student_history:
             return {
                 "recommended_difficulty": "medium",
-                "reasoning": "No history available, starting with medium difficulty",
-                "confidence": 0.5
+                "reasoning": "No prior sessions recorded. Begin at a balanced level.",
+                "confidence": 0.4,
+                "current_performance": {
+                    "consistency_score": 0.0,
+                    "accuracy_rate": 0.0,
+                    "trend": "insufficient_data",
+                },
+                "recommendations": [
+                    "Collect a few sessions before adjusting difficulty"
+                ],
             }
-        
-        # Calculate recent performance metrics
-        recent_sessions = student_history[-5:]  # Last 5 sessions
-        avg_consistency = sum(s.get('consistency_score', 0) for s in recent_sessions) / len(recent_sessions)
-        
-        # Calculate accuracy using multiple methods for better assessment
-        avg_accuracy = self._calculate_accuracy(recent_sessions)
-        
-        # Analyze performance trends
-        trend_analysis = self._analyze_performance_trend(student_history)
-        
-        # Determine difficulty adjustment
-        adjustment = self._determine_difficulty_adjustment(
-            current_difficulty, avg_consistency, avg_accuracy, trend_analysis
-        )
-        
-        # Calculate confidence based on data quality
-        confidence = self._calculate_confidence(student_history, recent_sessions)
-        
+
+        recent_sessions = student_history[-5:]
+        metrics = self._extract_metrics(recent_sessions)
+        trend = self._compute_trend(recent_sessions)
+        adjustment = self._choose_difficulty(current_difficulty, metrics, trend)
+
         return {
             "recommended_difficulty": adjustment["new_difficulty"],
             "reasoning": adjustment["reasoning"],
-            "confidence": confidence,
+            "confidence": self._confidence_score(student_history, metrics),
             "current_performance": {
-                "consistency_score": avg_consistency,
-                "accuracy_rate": avg_accuracy,
-                "trend": trend_analysis["trend"]
+                "consistency_score": metrics["avg_consistency"],
+                "accuracy_rate": metrics["accuracy"],
+                "trend": trend["label"],
             },
-            "recommendations": self._generate_recommendations(avg_consistency, avg_accuracy, trend_analysis)
+            "recommendations": self._generate_recommendations(metrics, trend),
         }
-    
-    def _analyze_performance_trend(self, history: List[Dict]) -> Dict[str, Any]:
-        """Analyze if performance is improving, declining, or stable."""
-        
-        if len(history) < 3:
-            return {"trend": "insufficient_data", "slope": 0}
-        
-        # Calculate trend using linear regression on consistency scores
-        scores = [s.get('consistency_score', 0) for s in history[-10:]]  # Last 10 sessions
-        n = len(scores)
-        
-        if n < 2:
-            return {"trend": "insufficient_data", "slope": 0}
-        
-        # Simple linear regression
-        x = list(range(n))
-        y = scores
-        
-        x_mean = sum(x) / n
-        y_mean = sum(y) / n
-        
-        numerator = sum((x[i] - x_mean) * (y[i] - y_mean) for i in range(n))
-        denominator = sum((x[i] - x_mean) ** 2 for i in range(n))
-        
-        if denominator == 0:
-            slope = 0
+
+    def _extract_metrics(self, sessions: List[Dict[str, Any]]) -> Dict[str, float]:
+        scores = [max(0.0, min(1.0, session.get("consistency_score", 0.0))) for session in sessions]
+        avg_consistency = sum(scores) / len(scores) if scores else 0.0
+
+        explicit = [1.0 if session.get("is_correct") else 0.0 for session in sessions if "is_correct" in session]
+        if explicit:
+            accuracy = sum(explicit) / len(explicit)
         else:
-            slope = numerator / denominator
-        
-        # Determine trend
-        if slope > 0.05:
-            trend = "improving"
-        elif slope < -0.05:
-            trend = "declining"
-        else:
-            trend = "stable"
-        
-        return {"trend": trend, "slope": slope}
-    
-    def _determine_difficulty_adjustment(self, current_difficulty: str, consistency: float, 
-                                       accuracy: float, trend: Dict) -> Dict[str, Any]:
-        """Determine the appropriate difficulty adjustment."""
-        
-        current_index = self.difficulty_levels.index(current_difficulty)
-        thresholds = self.performance_thresholds[current_difficulty]
-        
-        # Check if student is performing well above threshold
-        if consistency >= thresholds["min_consistency"] + 0.2 and accuracy >= thresholds["min_accuracy"] + 0.2:
-            if current_index < len(self.difficulty_levels) - 1:
-                return {
-                    "new_difficulty": self.difficulty_levels[current_index + 1],
-                    "reasoning": f"Excellent performance (consistency: {consistency:.2f}, accuracy: {accuracy:.2f}). Ready for harder problems."
-                }
-        
-        # Check if student is struggling significantly
-        elif consistency < thresholds["min_consistency"] - 0.2 or accuracy < thresholds["min_accuracy"] - 0.2:
-            if current_index > 0:
-                return {
-                    "new_difficulty": self.difficulty_levels[current_index - 1],
-                    "reasoning": f"Struggling with current level (consistency: {consistency:.2f}, accuracy: {accuracy:.2f}). Moving to easier problems."
-                }
-        
-        # Check trend-based adjustments
-        if trend["trend"] == "declining" and consistency < thresholds["min_consistency"]:
-            if current_index > 0:
-                return {
-                    "new_difficulty": self.difficulty_levels[current_index - 1],
-                    "reasoning": f"Performance declining (trend: {trend['slope']:.3f}). Reducing difficulty to maintain engagement."
-                }
-        
-        elif trend["trend"] == "improving" and consistency >= thresholds["min_consistency"]:
-            if current_index < len(self.difficulty_levels) - 1:
-                return {
-                    "new_difficulty": self.difficulty_levels[current_index + 1],
-                    "reasoning": f"Performance improving (trend: {trend['slope']:.3f}). Increasing difficulty to maintain challenge."
-                }
-        
-        # No change needed
+            accuracy = avg_consistency
+
+        best_consistency = max(scores) if scores else 0.0
+
         return {
-            "new_difficulty": current_difficulty,
-            "reasoning": f"Performance appropriate for current level (consistency: {consistency:.2f}, accuracy: {accuracy:.2f})."
+            "avg_consistency": avg_consistency,
+            "accuracy": accuracy,
+            "best_consistency": best_consistency,
+            "sample_size": len(sessions),
+            "explicit_accuracy_used": bool(explicit),
         }
-    
-    def _calculate_confidence(self, full_history: List[Dict], recent_sessions: List[Dict]) -> float:
-        """Calculate confidence in the recommendation based on data quality."""
-        
-        if len(full_history) < 3:
-            return 0.3  # Low confidence with little data
-        
-        if len(recent_sessions) < 3:
-            return 0.5  # Medium confidence with some recent data
-        
-        # Higher confidence with more data and consistent patterns
-        data_quality = min(1.0, len(full_history) / 10)  # More data = higher confidence
-        recency_bonus = min(0.3, len(recent_sessions) / 10)  # Recent data bonus
-        
-        return min(1.0, 0.4 + data_quality + recency_bonus)
-    
-    def _generate_recommendations(self, consistency: float, accuracy: float, trend: Dict) -> List[str]:
-        """Generate specific recommendations for the student."""
-        
-        recommendations = []
-        
-        if consistency < 0.5:
-            recommendations.append("Focus on step-by-step problem solving to improve consistency")
-        
-        if accuracy < 0.6:
-            recommendations.append("Practice basic mathematical operations to improve accuracy")
-        
-        if trend["trend"] == "declining":
-            recommendations.append("Consider taking breaks between sessions to maintain focus")
-        
-        if consistency > 0.8 and accuracy > 0.8:
-            recommendations.append("Excellent progress! Ready for more challenging problems")
-        
+
+    def _compute_trend(self, sessions: List[Dict[str, Any]]) -> Dict[str, float]:
+        scores = [session.get("consistency_score", 0.0) for session in sessions]
+        if len(scores) < 3:
+            return {"label": "insufficient_data", "delta": 0.0}
+
+        midpoint = len(scores) // 2
+        early_avg = sum(scores[:midpoint]) / max(midpoint, 1)
+        late_avg = sum(scores[midpoint:]) / max(len(scores) - midpoint, 1)
+        delta = late_avg - early_avg
+
+        if delta > 0.1:
+            label = "improving"
+        elif delta < -0.1:
+            label = "declining"
+        else:
+            label = "stable"
+
+        return {"label": label, "delta": delta}
+
+    def _choose_difficulty(
+        self,
+        current: str,
+        metrics: Dict[str, float],
+        trend: Dict[str, float],
+    ) -> Dict[str, str]:
+        current_index = self.difficulty_levels.index(current)
+        avg_consistency = metrics["avg_consistency"]
+        accuracy = metrics["accuracy"]
+        best_consistency = metrics["best_consistency"]
+
+        if accuracy >= 0.8 and avg_consistency >= 0.75 and best_consistency >= 0.85:
+            if current_index < len(self.difficulty_levels) - 1:
+                target = self.difficulty_levels[current_index + 1]
+                return {
+                    "new_difficulty": target,
+                    "reasoning": "Recent work is consistently strong. Increasing challenge level.",
+                }
+
+        if accuracy <= 0.45 or avg_consistency <= 0.4:
+            if current_index > 0:
+                target = self.difficulty_levels[current_index - 1]
+                return {
+                    "new_difficulty": target,
+                    "reasoning": "Student is struggling with current level. Reducing difficulty for consolidation.",
+                }
+
+        if trend["label"] == "declining" and avg_consistency < 0.6 and current_index > 0:
+            target = self.difficulty_levels[current_index - 1]
+            return {
+                "new_difficulty": target,
+                "reasoning": "Recent decline in performance detected. Lowering difficulty to rebuild confidence.",
+            }
+
+        if trend["label"] == "improving" and avg_consistency >= 0.7 and current_index < len(self.difficulty_levels) - 1:
+            target = self.difficulty_levels[current_index + 1]
+            return {
+                "new_difficulty": target,
+                "reasoning": "Performance is steadily improving. Introducing the next difficulty step.",
+            }
+
+        return {
+            "new_difficulty": current,
+            "reasoning": "Keep practicing at the current level to gather more data before adjusting.",
+        }
+
+    def _confidence_score(self, history: List[Dict[str, Any]], metrics: Dict[str, float]) -> float:
+        session_count = len(history)
+        base = 0.3 + min(session_count, 10) * 0.05  # up to 0.8 from count
+        if metrics["explicit_accuracy_used"]:
+            base += 0.1
+        return round(min(base, 0.9), 2)
+
+    def _generate_recommendations(self, metrics: Dict[str, float], trend: Dict[str, float]) -> List[str]:
+        recommendations: List[str] = []
+
+        if metrics["avg_consistency"] < 0.5:
+            recommendations.append("Review recent problems step-by-step to build reliable routines.")
+
+        if metrics["accuracy"] < 0.6:
+            recommendations.append("Focus on targeted practice with feedback on mistakes.")
+
+        if trend["label"] == "declining":
+            recommendations.append("Reduce cognitive load and revisit foundational concepts.")
+
+        if metrics["avg_consistency"] >= 0.75 and trend["label"] in {"stable", "improving"}:
+            recommendations.append("Introduce slightly more complex problems with scaffolding.")
+
         if not recommendations:
-            recommendations.append("Continue with current approach - performance is on track")
-        
+            recommendations.append("Maintain the current mix of problem types and monitor progress.")
+
         return recommendations
-    
-    def _calculate_accuracy(self, sessions: List[Dict]) -> float:
-        """
-        Calculate accuracy using multiple methods for better assessment.
-        
-        Args:
-            sessions: List of session data
-            
-        Returns:
-            Accuracy score between 0.0 and 1.0
-        """
-        if not sessions:
-            return 0.0
-        
-        # Method 1: Use explicit is_correct field if available and reliable
-        explicit_correct = [s.get('is_correct', False) for s in sessions if 'is_correct' in s]
-        
-        # Method 2: Use consistency score as a proxy for accuracy
-        # High consistency (>= 0.7) suggests good performance
-        consistency_based = []
-        for s in sessions:
-            consistency = s.get('consistency_score', 0)
-            # Convert consistency to accuracy: 0.7+ consistency = 1.0 accuracy, 0.5-0.7 = 0.5, <0.5 = 0.0
-            if consistency >= 0.7:
-                consistency_based.append(1.0)
-            elif consistency >= 0.5:
-                consistency_based.append(0.5)
-            else:
-                consistency_based.append(0.0)
-        
-        # Method 3: Check for major errors in consistency results
-        error_based = []
-        for s in sessions:
-            consistency_results = s.get('consistency_results', {})
-            major_errors = consistency_results.get('major_inconsistencies', [])
-            # No major errors = good performance
-            error_based.append(1.0 if len(major_errors) == 0 else 0.0)
-        
-        # Combine methods with weights
-        # If we have explicit is_correct data, use it as primary (70% weight)
+
         # Otherwise, use consistency and error analysis (50% each)
         if explicit_correct and any(explicit_correct):
             # Use explicit data as primary, but also consider consistency

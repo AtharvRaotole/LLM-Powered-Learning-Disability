@@ -1,6 +1,7 @@
-import { useEffect, useContext, useState } from "react"
+import { useEffect, useContext, useState } from "react";
 import UserContext from "../Store/UserContext";
-import classes from "./Problem.module.css"
+import classes from "./Problem.module.css";
+import { generateLangGraphProblem } from "../Utils/langgraphApi";
 
 export default function Problem(){
     const userCtx = useContext(UserContext);
@@ -21,47 +22,32 @@ export default function Problem(){
     async function generateProblem(){
         setIsLoading(true);
         setError(null);
-        console.log("Generating problem for grade level:", gradeLevel, "difficulty:", selectedDifficulty);
         try{
-            const url = `http://localhost:8000/api/v1/openai/generate_problem?grade_level=${gradeLevel}&difficulty=${selectedDifficulty}`;
-            console.log("Making request to:", url);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const problemData = await generateLangGraphProblem({
+                grade_level: gradeLevel,
+                difficulty: selectedDifficulty,
             });
-            
-            console.log("Response status:", response.status);
-            console.log("Response ok:", response.ok);
-            
-            if(!response.ok){
-                const errorText = await response.text();
-                console.error("Response error:", errorText);
-                throw new Error(`Failed to generate problem: ${response.status} ${response.statusText}`);
+
+            if (!problemData || !problemData.problem) {
+                throw new Error("Problem generation returned empty data");
             }
-            
-            const jsonResponse = await response.json();
-            console.log("Response data:", jsonResponse);
-            
-            userCtx.setGeneratedProblem(jsonResponse.problem);
-            userCtx.setAnswer(jsonResponse.answer);
-            userCtx.setApproach(jsonResponse.solution);
-            
-            sessionStorage.setItem("problem", jsonResponse.problem);
-            sessionStorage.setItem("answer", jsonResponse.answer);
-            sessionStorage.setItem("approach", jsonResponse.solution);
+
+            userCtx.setGeneratedProblem(problemData.problem);
+            userCtx.setAnswer(problemData.answer);
+            userCtx.setApproach(problemData.solution);
+
+            sessionStorage.setItem("problem", problemData.problem);
+            sessionStorage.setItem("answer", problemData.answer || "");
+            sessionStorage.setItem("approach", problemData.solution || "");
             sessionStorage.setItem("difficulty", selectedDifficulty);
             sessionStorage.setItem("gradeLevel", gradeLevel);
-            
-            setProblem(jsonResponse.problem);
-            setAnswer(jsonResponse.answer);
-            setApproach(jsonResponse.solution);
-            setConcepts(jsonResponse.concepts || []);
-            setDifficulty(jsonResponse.difficulty || '');
+
+            setProblem(problemData.problem);
+            setAnswer(problemData.answer || "");
+            setApproach(problemData.solution || "");
+            setConcepts(problemData.concepts || []);
+            setDifficulty(problemData.difficulty || selectedDifficulty);
         } catch(error) {
-            console.error("Error while generating problem:", error);
             setError(`Failed to generate problem: ${error.message}`);
         } finally {
             setIsLoading(false);

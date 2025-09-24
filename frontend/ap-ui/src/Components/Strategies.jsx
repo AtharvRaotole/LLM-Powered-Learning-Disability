@@ -1,40 +1,71 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DisabilitiesEnum from "../Store/Disabilities";
 import classes from "./Strategies.module.css";
+import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+
 export default function Strategies(){
     const {id}=useParams();
     const disability=DisabilitiesEnum[id];
     const problem=sessionStorage.getItem('problem');
-    const[response,setResponse]=useState(null);
-    const[isLoading,setIsLoading]=useState(true);
-    const[error,setError]=useState(null);
+    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
+    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
+    const [response,setResponse]=useState(null);
+    const [isLoading,setIsLoading]=useState(true);
+    const [error,setError]=useState(null);
     
     useEffect(()=>{
-        async function generateAttempt(disability){
-            setIsLoading(true);
-            const response=await fetch("http://localhost:8000/api/v1/openai/generate_strategies", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                disability: disability,
-                problem: problem
-            })
-            })
-            if(!response.ok){
-                setError("Error while generating attempt");
-                setIsLoading(false);
-                return;
+        async function fetchLegacyStrategies(currentDisability){
+            const response = await fetch("http://localhost:8000/api/v1/openai/generate_strategies", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    disability: currentDisability,
+                    problem,
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`Legacy strategies failed (${response.status})`);
             }
-            const jsonResponse=await response.json();
-            console.log(jsonResponse);
-            setResponse(jsonResponse);
-            setIsLoading(false);
+            return response.json();
         }
-        generateAttempt(disability);
-    },[disability,problem])
+
+        async function loadStrategies(currentDisability){
+            setIsLoading(true);
+            setError(null);
+            try {
+                const payload = {
+                    grade_level: gradeLevel,
+                    difficulty,
+                    disability: currentDisability,
+                    problem,
+                };
+
+                let analysis = await getOrRunFullWorkflow(payload);
+                let strategyData = analysis?.results?.teaching_strategies;
+
+                if (!strategyData) {
+                    analysis = await getOrRunFullWorkflow(payload, { forceRefresh: true });
+                    strategyData = analysis?.results?.teaching_strategies;
+                }
+
+                if (!strategyData) {
+                    strategyData = await fetchLegacyStrategies(currentDisability);
+                }
+
+                setResponse(strategyData);
+            } catch (err) {
+                console.error("Strategies error:", err);
+                const message = err?.message || "Error while generating strategies. Please try again.";
+                setError(message);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        if (disability && problem) {
+            loadStrategies(disability);
+        }
+    },[gradeLevel,difficulty,disability,problem])
     return(
         <div className={classes.container}>
             <div className={classes.header}>

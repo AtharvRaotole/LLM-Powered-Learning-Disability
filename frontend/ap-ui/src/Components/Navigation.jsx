@@ -1,11 +1,9 @@
 import classes from './Navigation.module.css'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
-import DisabilityIdentifierModal from './DisabilityIdentifierModal';
 
 export default function Navigation(){
     const [selectedDisabilityID, setSelectedDisabilityID] = useState('');
-    const [showIdentifier, setShowIdentifier] = useState(false);
     
     useEffect(() => {
         const selected = sessionStorage.getItem('disability');
@@ -85,26 +83,15 @@ export default function Navigation(){
             <div className={classes.identifierSection}>
                 <button 
                     className={classes.identifierButton}
-                    onClick={() => setShowIdentifier(true)}
-                    aria-label="Open disability identifier tool to help identify learning disabilities"
+                    onClick={() => navigate('/disability-identifier')}
+                    aria-label="Open disability identifier tool"
                 >
                     <span className={classes.buttonIcon} aria-hidden="true">🔍</span>
                     <span>Disability Identifier</span>
                 </button>
-                <DisabilityIdentifierModal 
-                    isOpen={showIdentifier} 
-                    onClose={() => setShowIdentifier(false)} 
-                />
             </div>
             
             <div className={classes.simulationSection}>
-                <button 
-                    className={classes.simulationButton}
-                    onClick={() => navigate('/multi-simulation')}
-                >
-                    <span className={classes.buttonIcon}>👥</span>
-                    <span>Multi-Student Simulation</span>
-                </button>
                 <button 
                     className={classes.adaptiveButton}
                     onClick={() => navigate('/adaptive-difficulty')}
@@ -118,13 +105,6 @@ export default function Navigation(){
                 >
                     <span className={classes.buttonIcon}>🎨</span>
                     <span>Interactive Whiteboard</span>
-                </button>
-                <button 
-                    className={classes.navButton}
-                    onClick={() => navigate('/ai-problem-generator')}
-                >
-                    <span className={classes.buttonIcon}>🤖</span>
-                    <span>AI Problem Generator</span>
                 </button>
                 {/* <button 
                     className={classes.navButton}
