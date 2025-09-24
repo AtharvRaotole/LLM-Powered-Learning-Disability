@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import classes from "./MultiStudentSimulation.module.css";
+import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
 
 export default function MultiStudentSimulation() {
     const [problem, setProblem] = useState('');
@@ -8,6 +9,8 @@ export default function MultiStudentSimulation() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [comparisonData, setComparisonData] = useState(null);
+    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
+    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
 
     const disabilities = [
         { id: 0, name: "No disability", color: "#10b981" },
@@ -45,44 +48,26 @@ export default function MultiStudentSimulation() {
             const simulationPromises = disabilities.map(async (disability) => {
                 try {
                     // Run student attempt
-                    const attemptRes = await fetch("http://localhost:8000/api/v1/openai/generate_attempt", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ 
-                            disability: disability.name, 
-                            problem: problem 
-                        })
+                    const analysis = await getOrRunFullWorkflow({
+                        grade_level: gradeLevel,
+                        difficulty,
+                        disability: disability.name,
+                        problem,
                     });
 
-                    if (!attemptRes.ok) throw new Error(`Failed to generate attempt for ${disability.name}`);
+                    const attemptData = analysis?.results?.student_simulation;
+                    const consistencyData = analysis?.results?.consistency_validation || analysis?.results?.consistency_report;
 
-                    const attemptData = await attemptRes.json();
-                    
-                    // Run consistency validation
-                    let consistencyData = null;
-                    try {
-                        const consistencyRes = await fetch("http://localhost:8000/api/v1/openai/validate_consistency", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                problem: problem,
-                                disability: disability.name,
-                                student_attempt: JSON.stringify(attemptData),
-                                expected_answer: expectedAnswer
-                            })
-                        });
-                        if (consistencyRes.ok) {
-                            consistencyData = await consistencyRes.json();
-                        }
-                    } catch (err) {
-                        console.warn(`Consistency validation failed for ${disability.name}:`, err);
+                    if (!attemptData) {
+                        throw new Error(`Missing student simulation for ${disability.name}`);
                     }
 
                     return {
                         disability,
                         attempt: attemptData,
                         consistency: consistencyData,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        cache: analysis?.metadata?.cache_status || {},
                     };
                 } catch (err) {
                     console.error(`Error simulating ${disability.name}:`, err);

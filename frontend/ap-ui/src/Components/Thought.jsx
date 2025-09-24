@@ -1,39 +1,70 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DisabilitiesEnum from "../Store/Disabilities";
 import classes from "./Thought.module.css";
+import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
 export default function Thought(){
     const {id}=useParams();
     const disability=DisabilitiesEnum[id];
     const problem=sessionStorage.getItem('problem');
-    const[response,setResponse]=useState(null);
-    const[isLoading,setIsLoading]=useState(true);
-    const[error,setError]=useState(null);
+    const [response,setResponse]=useState(null);
+    const [isLoading,setIsLoading]=useState(true);
+    const [error,setError]=useState(null);
+    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
+    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
     
     useEffect(()=>{
-        async function generateAttempt(disability){
-            setIsLoading(true);
-            const response=await fetch("http://localhost:8000/api/v1/openai/generate_thought", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                disability: disability,
-                problem: problem
-            })
-            })
-            if(!response.ok){
-                setError("Error while generating attempt");
-                setIsLoading(false);
-                return;
+        async function fetchLegacyThought(currentDisability){
+            const response = await fetch("http://localhost:8000/api/v1/openai/generate_thought", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    disability: currentDisability,
+                    problem,
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`Legacy thought failed (${response.status})`);
             }
-            const jsonResponse=await response.json();
-            setResponse(jsonResponse);
-            setIsLoading(false);
+            return response.json();
         }
-        generateAttempt(disability);
-    },[disability,problem])
+
+        async function loadThought(currentDisability){
+            setIsLoading(true);
+            setError(null);
+            try {
+                const payload = {
+                    grade_level: gradeLevel,
+                    difficulty,
+                    disability: currentDisability,
+                    problem,
+                };
+
+                let analysis = await getOrRunFullWorkflow(payload);
+                let thoughtData = analysis?.results?.thought_analysis;
+
+                if (!thoughtData) {
+                    analysis = await getOrRunFullWorkflow(payload, { forceRefresh: true });
+                    thoughtData = analysis?.results?.thought_analysis;
+                }
+
+                if (!thoughtData) {
+                    thoughtData = await fetchLegacyThought(currentDisability);
+                }
+
+                setResponse(thoughtData);
+            } catch (err) {
+                console.error("Thought analysis error:", err);
+                const message = err?.message || "Error while generating analysis. Please try again.";
+                setError(message);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        if (disability && problem) {
+            loadThought(disability);
+        }
+    },[gradeLevel,difficulty,disability,problem])
     return(
         <div className={classes.container}>
             <div className={classes.header}>

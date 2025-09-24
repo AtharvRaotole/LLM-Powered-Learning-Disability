@@ -7,10 +7,8 @@ class SessionManager {
 
     // Save a new session
     saveSession(sessionData) {
-        console.log('SessionManager.saveSession called with:', sessionData);
         try {
             const sessions = this.getAllSessions();
-            console.log('Current sessions before save:', sessions);
             
             const newSession = {
                 id: Date.now(),
@@ -18,16 +16,10 @@ class SessionManager {
                 ...sessionData
             };
             
-            console.log('New session to save:', newSession);
             sessions.unshift(newSession); // Add to beginning
             
             const jsonString = JSON.stringify(sessions);
-            console.log('About to save to localStorage:', jsonString);
             localStorage.setItem(this.storageKey, jsonString);
-            
-            // Verify it was saved
-            const savedData = localStorage.getItem(this.storageKey);
-            console.log('Data saved to localStorage:', savedData);
             
             return newSession;
         } catch (error) {

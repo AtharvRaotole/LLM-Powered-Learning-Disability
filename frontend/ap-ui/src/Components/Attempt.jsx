@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
-import DisabilitiesEnum from "../Store/Disabilities"
-import classes from "./Attempt.module.css"
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import DisabilitiesEnum from "../Store/Disabilities";
+import classes from "./Attempt.module.css";
+import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
 
 export default function Attempt(){
     const {id} = useParams();
@@ -10,41 +11,65 @@ export default function Attempt(){
     const [response, setResponse] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
+    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
     
     useEffect(() => {
-        async function generateAttempt(disability){
+        async function fetchLegacyAttempt(currentDisability) {
+            const legacyResponse = await fetch("http://localhost:8000/api/v1/openai/generate_attempt", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    disability: currentDisability,
+                    problem,
+                }),
+            });
+
+            if (!legacyResponse.ok) {
+                throw new Error(`Legacy attempt failed (${legacyResponse.status})`);
+            }
+
+            return legacyResponse.json();
+        }
+
+        async function loadAttempt(currentDisability) {
             setIsLoading(true);
             setError(null);
             try {
-                const response = await fetch("http://localhost:8000/api/v1/openai/generate_attempt", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        disability: disability,
-                        problem: problem
-                    })
-                });
-                
-                if(!response.ok){
-                    throw new Error("Failed to generate student attempt");
+                const payload = {
+                    grade_level: gradeLevel,
+                    difficulty,
+                    disability: currentDisability,
+                    problem,
+                };
+
+                let analysis = await getOrRunFullWorkflow(payload);
+                let attemptData = analysis?.results?.student_simulation;
+
+                if (!attemptData) {
+                    analysis = await getOrRunFullWorkflow(payload, { forceRefresh: true });
+                    attemptData = analysis?.results?.student_simulation;
                 }
-                
-                const jsonResponse = await response.json();
-                setResponse(jsonResponse);
+
+                if (!attemptData) {
+                    attemptData = await fetchLegacyAttempt(currentDisability);
+                }
+
+                setResponse(attemptData);
             } catch (err) {
-                setError("Error while generating attempt. Please try again.");
-                console.error("Error:", err);
+                const message = err?.message || "Error while generating attempt. Please try again.";
+                setError(message);
+                console.error("Student simulation error:", err);
             } finally {
                 setIsLoading(false);
             }
         }
-        
         if (disability && problem) {
-            generateAttempt(disability);
+            loadAttempt(disability);
         }
-    }, [disability, problem])
+    }, [gradeLevel, difficulty, disability, problem])
     
     return(
         <div className={classes.container}>

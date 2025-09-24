@@ -1,8 +1,12 @@
 fastapi==0.110.0
 uvicorn==0.28.0
-pydantic==2.6.4
-openai==1.14.0
+pydantic>=2.7,<3
+openai>=1.44.0
 python-dotenv==1.0.1
 aiosqlite==0.19.0
-langchain==0.1.0
-langchain-openai==0.0.5
+
+# Modern LangChain ecosystem
+langchain>=0.2.16
+langchain-openai>=0.2.1
+langchain-community>=0.2.16
+langgraph>=0.2.5

@@ -3,10 +3,9 @@ import { Route,Routes } from "react-router-dom";
 import Navigation from "./Navigation";
 import Details from "./Details";
 import Problem from "./Problem";
-import MultiStudentSimulation from "./MultiStudentSimulation";
 import AdaptiveDifficulty from "./AdaptiveDifficulty";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
-import AIProblemGenerator from "./AIProblemGenerator";
+import DisabilityIdentifier from "./DisabilityIdentifier";
 // import AnalyticsDashboard from "./AnalyticsDashboard";
 import AITutorChat from "./AITutorChat";
 export default function UserDisplay(){
@@ -27,10 +26,9 @@ export default function UserDisplay(){
                     <Routes>
                         <Route path="/" element={<Problem />} />
                         <Route path="disability/:id/details/*" element={<Details/>} />
-                        <Route path="multi-simulation" element={<MultiStudentSimulation/>} />
                         <Route path="adaptive-difficulty" element={<AdaptiveDifficulty/>} />
                         <Route path="whiteboard" element={<InteractiveWhiteboard/>} />
-                        <Route path="ai-problem-generator" element={<AIProblemGenerator/>} />
+                        <Route path="disability-identifier" element={<DisabilityIdentifier/>} />
                         {/* <Route path="analytics-dashboard" element={<AnalyticsDashboard/>} /> */}
                         <Route path="ai-tutor-chat" element={<AITutorChat/>} />
                     </Routes>

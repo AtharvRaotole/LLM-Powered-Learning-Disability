@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from app.Routes import openai_router
+from app.Routes import langgraph_router, openai_router
 
 app = FastAPI(
     title="Educational Dashboard API",
@@ -17,7 +17,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(openai_router,prefix="/api/v1/openai",tags=["OpenAI"])
+app.include_router(openai_router, prefix="/api/v1/openai", tags=["OpenAI"])
+app.include_router(langgraph_router, prefix="/api/v1/langgraph", tags=["LangGraph"])
+app.include_router(langgraph_router, prefix="/api/v2/langgraph", tags=["LangGraph"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
