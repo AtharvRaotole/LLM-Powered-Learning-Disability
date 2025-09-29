@@ -258,30 +258,41 @@ export default function AITutorChat() {
     return (
         <div className={classes.container}>
             <div className={classes.header}>
-                <h2>🤖 AI Tutor Chat Assistant</h2>
+                <div className={classes.headerContent}>
+                    <h2>🤖 AI Tutor Chat Assistant</h2>
+                    <p className={classes.headerSubtitle}>
+                        Chat with an AI tutor that adapts to your learning style and helps you understand math concepts
+                    </p>
+                </div>
                 <div className={classes.headerControls}>
-                    <select 
-                        value={aiPersonality} 
-                        onChange={(e) => setAiPersonality(e.target.value)}
-                        className={classes.personalitySelect}
-                    >
-                        {personalities.map(personality => (
-                            <option key={personality.id} value={personality.id}>
-                                {personality.icon} {personality.name}
-                            </option>
-                        ))}
-                    </select>
-                    <select 
-                        value={chatMode} 
-                        onChange={(e) => setChatMode(e.target.value)}
-                        className={classes.modeSelect}
-                    >
-                        {chatModes.map(mode => (
-                            <option key={mode.id} value={mode.id}>
-                                {mode.icon} {mode.name}
-                            </option>
-                        ))}
-                    </select>
+                    <div className={classes.selectGroup}>
+                        <label>AI Personality:</label>
+                        <select 
+                            value={aiPersonality} 
+                            onChange={(e) => setAiPersonality(e.target.value)}
+                            className={classes.personalitySelect}
+                        >
+                            {personalities.map(personality => (
+                                <option key={personality.id} value={personality.id}>
+                                    {personality.icon} {personality.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className={classes.selectGroup}>
+                        <label>Chat Mode:</label>
+                        <select 
+                            value={chatMode} 
+                            onChange={(e) => setChatMode(e.target.value)}
+                            className={classes.modeSelect}
+                        >
+                            {chatModes.map(mode => (
+                                <option key={mode.id} value={mode.id}>
+                                    {mode.icon} {mode.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <button className={classes.clearBtn} onClick={clearChat}>
                         🗑️ Clear
                     </button>
@@ -362,51 +373,6 @@ export default function AITutorChat() {
                 </div>
             </div>
 
-            <div className={classes.sidebar}>
-                <div className={classes.personalityInfo}>
-                    <h3>🎭 AI Personality</h3>
-                    <div className={classes.personalityCard}>
-                        <div className={classes.personalityIcon}>
-                            {personalities.find(p => p.id === aiPersonality)?.icon}
-                        </div>
-                        <div className={classes.personalityDetails}>
-                            <h4>{personalities.find(p => p.id === aiPersonality)?.name}</h4>
-                            <p>{personalities.find(p => p.id === aiPersonality)?.description}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={classes.modeInfo}>
-                    <h3>🎯 Chat Mode</h3>
-                    <div className={classes.modeCard}>
-                        <div className={classes.modeIcon}>
-                            {chatModes.find(m => m.id === chatMode)?.icon}
-                        </div>
-                        <div className={classes.modeDetails}>
-                            <h4>{chatModes.find(m => m.id === chatMode)?.name}</h4>
-                            <p>{chatModes.find(m => m.id === chatMode)?.description}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={classes.stats}>
-                    <h3>📊 Chat Stats</h3>
-                    <div className={classes.statsGrid}>
-                        <div className={classes.statItem}>
-                            <span className={classes.statValue}>{messages.filter(m => m.sender === 'user').length}</span>
-                            <span className={classes.statLabel}>Your Messages</span>
-                        </div>
-                        <div className={classes.statItem}>
-                            <span className={classes.statValue}>{messages.filter(m => m.sender === 'ai').length}</span>
-                            <span className={classes.statLabel}>AI Responses</span>
-                        </div>
-                        <div className={classes.statItem}>
-                            <span className={classes.statValue}>{Math.floor((Date.now() - new Date(messages[0]?.timestamp || Date.now()).getTime()) / 60000)}</span>
-                            <span className={classes.statLabel}>Minutes</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

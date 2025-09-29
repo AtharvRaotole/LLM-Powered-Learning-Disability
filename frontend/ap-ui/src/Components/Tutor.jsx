@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import DisabilitiesEnum from "../Store/Disabilities";
 import classes from "./Tutor.module.css";
 import SessionManager from "../Utils/SessionManager";
 import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+import ProblemContext from "./ProblemContext";
 
 export default function Tutor(){
     const {id}=useParams();
-    const navigate = useNavigate();
     const disability=DisabilitiesEnum[id];
     const problem=sessionStorage.getItem('problem');
     const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
@@ -19,7 +19,6 @@ export default function Tutor(){
     const[consistencyResults,setConsistencyResults]=useState(null);
     const[isLoading,setIsLoading]=useState(true);
     const[error,setError]=useState(null);
-    const[performanceData,setPerformanceData]=useState(null);
 
     useEffect(()=>{
         async function fetchLegacyAttempt(currentDisability, question) {
@@ -94,11 +93,6 @@ export default function Tutor(){
 
                 setResponse(tutorSession);
                 setConsistencyResults(consistency || null);
-                setPerformanceData({
-                    cacheStatus: analysis?.metadata?.cache_status || {},
-                    workflowType: analysis?.workflow_type,
-                    currentStep: analysis?.current_step,
-                });
 
                 let testAttemptJson = null;
                 let passed = false;
@@ -173,6 +167,7 @@ export default function Tutor(){
 
     return(
         <div className={classes.container}>
+            <ProblemContext />
             <div className={classes.header}>
                 <div className={classes.headerIcon}>🗣️</div>
                 <div>
@@ -197,27 +192,40 @@ export default function Tutor(){
 
             {response && !isLoading && (
                 <div className={classes.content}>
-                    {performanceData && (
-                        <div className={classes.workflowMeta}>
-                            <span>Workflow: {performanceData.workflowType}</span>
-                            <span>Cache hits: {renderCacheSummary(performanceData.cacheStatus)}</span>
+                    <div className={classes.conversationContainer}>
+                        <div className={classes.conversationHeader}>
+                            <span className={classes.conversationIcon}>💬</span>
+                            <span className={classes.conversationTitle}>Tutoring Conversation</span>
                         </div>
-                    )}
-                    <div className={classes.conversation}>
-                        {response.conversation?.map((turn, index) => (
-                            <div key={index} className={
-                                turn.speaker === "Tutor" ? classes.tutorTurn : classes.studentTurn
-                            }>
-                                <div className={classes.speaker}>{turn.speaker}</div>
-                                <div className={classes.text}>{turn.text}</div>
-                                {turn.strategy && (
-                                    <div className={classes.strategyTag}>Strategy: {turn.strategy}</div>
-                                )}
-                                {turn.emotion && (
-                                    <div className={classes.emotionTag}>Emotion: {turn.emotion}</div>
-                                )}
-                            </div>
-                        ))}
+                        <div className={classes.conversation}>
+                            {response.conversation?.map((turn, index) => (
+                                <div key={index} className={
+                                    turn.speaker === "Tutor" ? classes.tutorTurn : classes.studentTurn
+                                }>
+                                    <div className={classes.speakerAvatar}>
+                                        {turn.speaker === "Tutor" ? "👨‍🏫" : "👨‍🎓"}
+                                    </div>
+                                    <div className={classes.messageContent}>
+                                        <div className={classes.speakerName}>{turn.speaker}</div>
+                                        <div className={classes.messageText}>{turn.text}</div>
+                                        <div className={classes.messageMeta}>
+                                            {turn.strategy && (
+                                                <span className={classes.strategyTag}>
+                                                    <span className={classes.tagIcon}>🎯</span>
+                                                    {turn.strategy}
+                                                </span>
+                                            )}
+                                            {turn.emotion && (
+                                                <span className={classes.emotionTag}>
+                                                    <span className={classes.tagIcon}>{getEmotionEmoji(turn.emotion)}</span>
+                                                    {turn.emotion}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     
                     {response.learning_objectives && (
@@ -311,14 +319,41 @@ function normalizeAnswer(value) {
     return sanitized;
 }
 
-function renderCacheSummary(cacheStatus = {}) {
-    const entries = Object.entries(cacheStatus);
-    if (!entries.length) {
-        return "live";
+function getEmotionEmoji(emotion) {
+    const emotionLower = (emotion || '').toLowerCase();
+    
+    // Map emotions to appropriate emojis
+    if (emotionLower.includes('anxious') || emotionLower.includes('nervous') || emotionLower.includes('worried')) {
+        return '😰';
     }
-    const hits = entries.filter(([, hit]) => hit).map(([node]) => node);
-    if (!hits.length) {
-        return "live";
+    if (emotionLower.includes('confused') || emotionLower.includes('unsure')) {
+        return '😕';
     }
-    return `cached (${hits.join(', ')})`;
+    if (emotionLower.includes('frustrated') || emotionLower.includes('angry')) {
+        return '😤';
+    }
+    if (emotionLower.includes('happy') || emotionLower.includes('excited') || emotionLower.includes('joyful')) {
+        return '😊';
+    }
+    if (emotionLower.includes('confident') || emotionLower.includes('proud')) {
+        return '😎';
+    }
+    if (emotionLower.includes('tentative') || emotionLower.includes('cautious')) {
+        return '🤔';
+    }
+    if (emotionLower.includes('relieved') || emotionLower.includes('calm')) {
+        return '😌';
+    }
+    if (emotionLower.includes('determined') || emotionLower.includes('focused')) {
+        return '💪';
+    }
+    if (emotionLower.includes('sad') || emotionLower.includes('disappointed')) {
+        return '😞';
+    }
+    if (emotionLower.includes('surprised') || emotionLower.includes('shocked')) {
+        return '😮';
+    }
+    
+    // Default emoji for unknown emotions
+    return '💭';
 }

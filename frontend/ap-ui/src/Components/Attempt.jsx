@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import DisabilitiesEnum from "../Store/Disabilities";
 import classes from "./Attempt.module.css";
 import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+import ProblemContext from "./ProblemContext";
 
 export default function Attempt(){
     const {id} = useParams();
@@ -73,6 +74,7 @@ export default function Attempt(){
     
     return(
         <div className={classes.container}>
+            <ProblemContext />
             <div className={classes.header}>
                 <div className={classes.headerIcon}>🎭</div>
                 <div>

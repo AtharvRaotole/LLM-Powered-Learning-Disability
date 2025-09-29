@@ -1,13 +1,15 @@
-import classes from '../Utils/Button.module.css'
+import classes from './InternalNavigation.module.css'
 import UserContext from '../Store/UserContext'
 import { useContext, useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
+import DisabilitiesEnum from '../Store/Disabilities';
 
 export default function InternalNavigation(){
     const {id} = useParams();
     const [mode, setMode] = useState('description');
     const userCtx = useContext(UserContext);
     const navigate = useNavigate();
+    const disability = DisabilitiesEnum[id];
     
     function handleClick(selectedMode){
         userCtx.setUserMode(selectedMode);
@@ -22,58 +24,69 @@ export default function InternalNavigation(){
     const navigationItems = [
         { 
             key: 'description', 
-            label: 'Disability Overview', 
+            label: 'Overview', 
             icon: '📋',
-            description: 'Learn about the disability'
+            description: 'Learn about the disability',
+            step: '1'
         },
         { 
             key: 'attempt', 
-            label: 'Student Simulation', 
+            label: 'Simulation', 
             icon: '🎭',
-            description: 'See how student would solve'
+            description: 'See how student would solve',
+            step: '2'
         },
         { 
             key: 'thought', 
-            label: 'Thought Analysis', 
+            label: 'Analysis', 
             icon: '🧠',
-            description: 'Understand student thinking'
+            description: 'Understand student thinking',
+            step: '3'
         },
         { 
             key: 'strategies', 
-            label: 'Teaching Strategies', 
+            label: 'Strategies', 
             icon: '🎯',
-            description: 'Effective teaching methods'
+            description: 'Effective teaching methods',
+            step: '4'
         },
         { 
             key: 'tutor', 
-            label: 'Tutor Conversation', 
+            label: 'Tutor', 
             icon: '💬',
-            description: 'Interactive tutoring session'
+            description: 'Interactive tutoring session',
+            step: '5'
         }
     ];
     
     return(
-        <div style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: '8px', 
-            padding: '20px',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-            borderRadius: '12px',
-            margin: '20px',
-            border: '1px solid #e2e8f0'
-        }}>
-            {navigationItems.map((item) => (
-                <button 
-                    key={item.key}
-                    className={`${classes.genericButton} ${mode === item.key ? classes.buttonActive : ''}`} 
-                    onClick={() => handleClick(item.key)}
-                    title={item.description}
-                >
-                    <span className={classes.buttonIcon}>{item.icon}</span>
-                    <span className={classes.buttonText}>{item.label}</span>
-                </button>
-            ))}
+        <div className={classes.navigationContainer}>
+            <div className={classes.navigationHeader}>
+                <h2 className={classes.disabilityTitle}>
+                    <span className={classes.titleIcon}>🎓</span>
+                    Learning with {disability}
+                </h2>
+                <p className={classes.navigationSubtitle}>
+                    Follow the tabs below to understand how students with this disability approach problems
+                </p>
+            </div>
+            <div className={classes.tabsContainer}>
+                {navigationItems.map((item, index) => (
+                    <button 
+                        key={item.key}
+                        className={`${classes.tabButton} ${mode === item.key ? classes.tabActive : ''}`} 
+                        onClick={() => handleClick(item.key)}
+                        title={item.description}
+                    >
+                        <span className={classes.tabStep}>{item.step}</span>
+                        <span className={classes.tabIcon}>{item.icon}</span>
+                        <span className={classes.tabLabel}>{item.label}</span>
+                        {index < navigationItems.length - 1 && (
+                            <span className={classes.tabArrow}>→</span>
+                        )}
+                    </button>
+                ))}
+            </div>
         </div>
     )
 }

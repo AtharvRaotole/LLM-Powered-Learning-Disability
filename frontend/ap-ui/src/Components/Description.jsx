@@ -1,6 +1,7 @@
 import classes from './Description.module.css'
 import descriptions from '../Store/description.json'
 import { useParams } from 'react-router-dom';
+import ProblemContext from './ProblemContext';
 
 export default function Description(props){
     const {id} = useParams();
@@ -8,6 +9,7 @@ export default function Description(props){
     
     return(
         <div className={classes.descriptionContainer}>
+            <ProblemContext />
             <div className={classes.contentContainer}>
                 <h1 className={classes.disabilityTitle}>{selectedDisability.name}</h1>
                 <p className={classes.disabilitySubtitle}>{selectedDisability.description}</p>

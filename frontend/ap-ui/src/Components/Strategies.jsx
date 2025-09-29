@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import DisabilitiesEnum from "../Store/Disabilities";
 import classes from "./Strategies.module.css";
 import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+import ProblemContext from "./ProblemContext";
 
 export default function Strategies(){
     const {id}=useParams();
@@ -68,6 +69,7 @@ export default function Strategies(){
     },[gradeLevel,difficulty,disability,problem])
     return(
         <div className={classes.container}>
+            <ProblemContext />
             <div className={classes.header}>
                 <div className={classes.headerIcon}>🎯</div>
                 <div>

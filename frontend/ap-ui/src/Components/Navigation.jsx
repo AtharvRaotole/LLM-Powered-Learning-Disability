@@ -35,6 +35,16 @@ export default function Navigation(){
     
     return(
         <div className={classes.NavigationContainer}>
+            <div className={classes.appHeader}>
+                <h1 className={classes.appTitle}>
+                    <span className={classes.appIcon}>🎓</span>
+                    Learning Disability Dashboard
+                </h1>
+                <p className={classes.appSubtitle}>
+                    Understand how students with different learning needs approach math problems
+                </p>
+            </div>
+            
             <div className={classes.problemGeneratorSection}>
                 <button 
                     className={classes.problemGeneratorButton}
@@ -43,13 +53,15 @@ export default function Navigation(){
                 >
                     <span className={classes.buttonIcon} aria-hidden="true">📚</span>
                     <span>Math Problem Generator</span>
-                    <span className={classes.buttonSubtext}>Start Here</span>
+                    <span className={classes.buttonSubtext}>Start Here - Step 1</span>
                 </button>
             </div>
             
             <ul className={classes.NavigationList} aria-label="Learning disability types">
                 <li className={`${classes.NavigationItem} ${classes.NavigationHeader}`} role="heading" aria-level="2">
-                    Learning Disabilities
+                    <span className={classes.headerIcon}>🧩</span>
+                    Select a Learning Disability
+                    <span className={classes.headerSubtext}>Step 2</span>
                 </li>
                 {disabilities.map((disability) => (
                     <li 

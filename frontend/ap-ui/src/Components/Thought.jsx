@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import DisabilitiesEnum from "../Store/Disabilities";
 import classes from "./Thought.module.css";
 import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+import ProblemContext from "./ProblemContext";
+
 export default function Thought(){
     const {id}=useParams();
     const disability=DisabilitiesEnum[id];
@@ -67,6 +69,7 @@ export default function Thought(){
     },[gradeLevel,difficulty,disability,problem])
     return(
         <div className={classes.container}>
+            <ProblemContext />
             <div className={classes.header}>
                 <div className={classes.headerIcon}>🧠</div>
                 <div>
