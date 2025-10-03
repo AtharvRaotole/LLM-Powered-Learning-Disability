@@ -13,8 +13,8 @@
 
 .appHeader {
     padding: var(--space-6) var(--space-6) var(--space-5);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #ffffff;
+    color: #1e293b;
     text-align: center;
     position: relative;
     overflow: hidden;
