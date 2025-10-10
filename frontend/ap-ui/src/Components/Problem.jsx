@@ -39,6 +39,13 @@ export default function Problem(){
             sessionStorage.setItem("problem", problemData.problem);
             sessionStorage.setItem("answer", problemData.answer || "");
             sessionStorage.setItem("approach", problemData.solution || "");
+            // Persist full problem JSON so downstream flows (Tutor/consistency)
+            // can access the canonical expected answer reliably.
+            try {
+                sessionStorage.setItem("problem_json", JSON.stringify(problemData));
+            } catch (e) {
+                // Non-fatal: fallback keys above still allow basic flow.
+            }
             sessionStorage.setItem("difficulty", selectedDifficulty);
             sessionStorage.setItem("gradeLevel", gradeLevel);
 

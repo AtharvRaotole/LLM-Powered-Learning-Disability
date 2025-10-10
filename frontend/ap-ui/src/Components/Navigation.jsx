@@ -91,6 +91,20 @@ export default function Navigation(){
                     </li>
                 ))}
             </ul>
+
+            {/* Step 3: Tutor Session (moved from internal tabs) */}
+            <div className={classes.identifierSection}>
+                <button 
+                    className={classes.problemGeneratorButton}
+                    onClick={() => selectedDisabilityID ? navigate(`/disability/${selectedDisabilityID}/details/tutor`) : null}
+                    aria-label="Start Tutor Session for selected disability"
+                    disabled={!selectedDisabilityID}
+                >
+                    <span className={classes.buttonIcon} aria-hidden="true">💬</span>
+                    <span>Start Tutor Session</span>
+                    <span className={classes.buttonSubtext}>Step 3</span>
+                </button>
+            </div>
             
             <div className={classes.identifierSection}>
                 <button 

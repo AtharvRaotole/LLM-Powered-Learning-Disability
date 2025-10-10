@@ -197,9 +197,6 @@ export default function AdaptiveDifficulty() {
                 <div className={classes.recommendationCard}>
                     <div className={classes.recommendationHeader}>
                         <h3>AI Recommendation</h3>
-                        <div className={classes.confidence}>
-                            Confidence: {(recommendation.confidence * 100).toFixed(0)}%
-                        </div>
                     </div>
                     
                     <div className={classes.recommendationContent}>
@@ -227,18 +224,6 @@ export default function AdaptiveDifficulty() {
                         
                         {recommendation.current_performance && (
                             <div className={classes.performanceMetrics}>
-                                <div className={classes.metric}>
-                                    <span className={classes.metricLabel}>Consistency:</span>
-                                    <span className={`${classes.metricValue} ${getPerformanceColor(recommendation.current_performance.consistency_score)}`}>
-                                        {(recommendation.current_performance.consistency_score * 100).toFixed(1)}%
-                                    </span>
-                                </div>
-                                <div className={classes.metric}>
-                                    <span className={classes.metricLabel}>Accuracy:</span>
-                                    <span className={`${classes.metricValue} ${getPerformanceColor(recommendation.current_performance.accuracy_rate)}`}>
-                                        {(recommendation.current_performance.accuracy_rate * 100).toFixed(1)}%
-                                    </span>
-                                </div>
                                 <div className={classes.metric}>
                                     <span className={classes.metricLabel}>Trend:</span>
                                     <span className={classes.metricValue}>
@@ -296,12 +281,6 @@ export default function AdaptiveDifficulty() {
                                     <span className={`${classes.difficultyBadge} ${getDifficultyColor(session.difficulty)}`}>
                                         {session.difficulty}
                                     </span>
-                                    <span className={`${classes.consistencyScore} ${getPerformanceColor(session.consistency_score)}`}>
-                                        {(session.consistency_score * 100).toFixed(0)}%
-                                    </span>
-                                    <span className={classes.correctnessBadge}>
-                                        {session.is_correct ? '✅' : '❌'}
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -310,118 +289,8 @@ export default function AdaptiveDifficulty() {
                 )}
             </div>
 
-            <div className={classes.chartSection}>
-                <h3>Result Breakdown</h3>
-                {studentHistory.length > 0 ? (
-                    <PerformanceSummary sessions={studentHistory} />
-                ) : (
-                    <div className={classes.chartPlaceholder}>
-                        <div className={classes.chartIcon}>📈</div>
-                        <div className={classes.chartText}>No Results Yet</div>
-                        <div className={classes.chartSubtext}>Complete some sessions to see result breakdown</div>
-                    </div>
-                )}
-            </div>
+            {/* Removed result breakdown chart; show history only */}
         </div>
     );
 }
-
-function PerformanceSummary({ sessions }) {
-    const total = sessions.length;
-
-    if (!total) {
-        return (
-            <div className={classes.chartPlaceholder}>
-                <div className={classes.chartIcon}>📈</div>
-                <div className={classes.chartText}>No Results Yet</div>
-                <div className={classes.chartSubtext}>Complete some sessions to see result breakdown</div>
-            </div>
-        );
-    }
-
-    const stats = [
-        { label: 'Correct', count: sessions.filter((s) => s.is_correct === true).length, color: '#16a34a' },
-        { label: 'Incorrect', count: sessions.filter((s) => s.is_correct === false).length, color: '#ef4444' },
-    ];
-
-    const unknownCount = total - stats[0].count - stats[1].count;
-    if (unknownCount > 0) {
-        stats.push({ label: 'No Result', count: unknownCount, color: '#94a3b8' });
-    }
-
-    let cumulativeAngle = 0;
-    const radius = 70;
-    const center = 80;
-
-    const slices = stats
-        .filter((segment) => segment.count > 0)
-        .map((segment, index) => {
-            const startAngle = cumulativeAngle;
-            const angle = (segment.count / total) * 360;
-            cumulativeAngle += angle;
-            const endAngle = cumulativeAngle;
-
-            return {
-                ...segment,
-                percentage: ((segment.count / total) * 100).toFixed(0),
-                path: describeArc(center, center, radius, startAngle, endAngle),
-                animationDelay: `${index * 80}ms`,
-            };
-        });
-
-    return (
-        <div className={classes.summaryGrid}>
-            <svg
-                className={classes.pieSvg}
-                viewBox="0 0 160 160"
-                role="img"
-                aria-label="Session outcome distribution"
-            >
-                <circle cx={center} cy={center} r={radius} className={classes.pieBackground} />
-                {slices.map((slice) => (
-                    <path
-                        key={slice.label}
-                        d={slice.path}
-                        fill={slice.color}
-                        className={classes.pieSlice}
-                        style={{ animationDelay: slice.animationDelay }}
-                    />
-                ))}
-                <circle cx={center} cy={center} r={radius - 26} className={classes.pieInner} />
-                <text x={center} y={center - 4} className={classes.pieTotal} textAnchor="middle">
-                    {total}
-                </text>
-                <text x={center} y={center + 16} className={classes.pieSubtext} textAnchor="middle">
-                    sessions
-                </text>
-            </svg>
-            <div className={classes.pieLegend}>
-                {slices.map((slice) => (
-                    <div key={slice.label} className={classes.legendRow}>
-                        <span className={classes.legendSwatch} style={{ background: slice.color }}></span>
-                        <span className={classes.legendLabel}>{slice.label}</span>
-                        <span className={classes.legendValue}>
-                            {slice.count} ({slice.percentage}%)
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
-    return {
-        x: centerX + radius * Math.cos(angleInRadians),
-        y: centerY + radius * Math.sin(angleInRadians),
-    };
-}
-
-function describeArc(x, y, radius, startAngle, endAngle) {
-    const start = polarToCartesian(x, y, radius, endAngle);
-    const end = polarToCartesian(x, y, radius, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-
-    return [`M`, start.x, start.y, `A`, radius, radius, 0, largeArcFlag, 0, end.x, end.y, `L`, x, y, `Z`].join(' ');
-}
+// Removed result breakdown chart and correctness indicators; page focuses on session history only.

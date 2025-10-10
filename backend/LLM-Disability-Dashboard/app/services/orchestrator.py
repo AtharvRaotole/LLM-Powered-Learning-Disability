@@ -34,6 +34,9 @@ class LangGraphOrchestrator:
         metadata = dict(payload.get("metadata") or {})
         workflow_type = str(payload.get("workflow_type", metadata.get("workflow_type", "full"))).lower()
         metadata["workflow_type"] = workflow_type
+        # For pre-tutor workflows, stop the graph after strategies
+        if workflow_type == "pre_tutor" and not metadata.get("stop_after"):
+            metadata["stop_after"] = "strategies"
 
         state: LearningSessionState = {
             "grade_level": payload.get("grade_level", "7th"),
@@ -196,6 +199,10 @@ class LangGraphOrchestrator:
         metadata = state.get("metadata") or {}
         return str(metadata.get("workflow_type", "full")).lower()
 
+    def _stop_after(self, state: LearningSessionState) -> str:
+        metadata = state.get("metadata") or {}
+        return str(metadata.get("stop_after", "")).lower()
+
     def _record_cache(self, state: LearningSessionState, node: str) -> None:
         metadata = state.setdefault("metadata", {})
         cache_info = metadata.setdefault("cache_status", {})
@@ -234,7 +241,37 @@ class LangGraphOrchestrator:
             raise HTTPException(status_code=400, detail="Problem text missing for attempt simulation")
 
         handler = self.registry.get("simulate_student")
-        payload = await self.llm_client.invoke(handler, disability, problem_text)
+        # Allow frontends to bias correctness via metadata
+        metadata = state.get("metadata") or {}
+        target = metadata.get("target_correctness", "")
+        expected = ""
+        if isinstance(problem, dict):
+            expected = str(problem.get("answer") or "").strip()
+
+        # Provide a simple default error style by disability to help LLM shape a wrong answer
+        default_error_styles = {
+            "Dyslexia": "digit_reversal",
+            "Dyscalculia": "operation_confusion",
+            "Attention Deficit Hyperactivity Disorder": "skipped_step",
+            "Dysgraphia": "miscopy_digit",
+            "Auditory Processing Disorder": "misheard_number",
+            "Non verbal Learning Disorder": "visual_misread",
+            "Language Processing Disorder": "language_misinterpretation",
+        }
+        error_style = metadata.get("error_style") or default_error_styles.get(disability, "operation_confusion")
+
+        # When we want likely incorrect attempts, avoid cache reuse to prevent stale correct outputs
+        use_cache = not (str(target).lower() == "likely_incorrect")
+
+        payload = await self.llm_client.invoke(
+            handler,
+            disability,
+            problem_text,
+            target,
+            expected,
+            error_style,
+            use_cache=use_cache,
+        )
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Student attempt returned invalid payload")
         self._record_cache(state, "simulate_attempt")
@@ -279,6 +316,9 @@ class LangGraphOrchestrator:
         return {"strategies": payload}
 
     async def _tutor_node(self, state: LearningSessionState) -> Dict[str, Any]:
+        # Allow workflows to stop after earlier phases (e.g., pre_tutor)
+        if self._stop_after(state) in {"analysis", "strategies"}:
+            return {}
         if not state.get("thought_analysis"):
             return {}
 
@@ -299,6 +339,8 @@ class LangGraphOrchestrator:
         return {"tutor_session": payload}
 
     async def _consistency_node(self, state: LearningSessionState) -> Dict[str, Any]:
+        if self._stop_after(state) in {"analysis", "strategies", "tutor"}:
+            return {}
         problem = state.get("problem", {})
         attempt = state.get("student_attempt")
         disability = state.get("disability", "Dyslexia")
@@ -318,6 +360,8 @@ class LangGraphOrchestrator:
         return {"consistency_report": payload}
 
     async def _adaptive_difficulty_node(self, state: LearningSessionState) -> Dict[str, Any]:
+        if self._stop_after(state) in {"analysis", "strategies", "tutor", "consistency"}:
+            return {}
         history = state.get("student_history")
         if not history:
             return {}
@@ -332,6 +376,8 @@ class LangGraphOrchestrator:
         return {"adaptive_plan": payload}
 
     async def _identify_disability_node(self, state: LearningSessionState) -> Dict[str, Any]:
+        if self._stop_after(state) in {"analysis", "strategies", "tutor", "consistency", "adaptive"}:
+            return {}
         student_response = state.get("student_response")
         if not student_response:
             return {}

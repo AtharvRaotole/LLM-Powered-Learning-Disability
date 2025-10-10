@@ -88,6 +88,8 @@ async def run_workflow(payload: Dict[str, Any]) -> Dict[str, Any]:
         return await run_problem_workflow(payload)
     if workflow_type == "analysis_only":
         return await run_analysis_workflow(payload)
+    if workflow_type == "pre_tutor":
+        return await _run_graph_workflow({**payload, "workflow_type": "pre_tutor"})
     return await run_full_workflow(payload)
 
 
@@ -96,7 +98,7 @@ async def _run_graph_workflow(payload: Dict[str, Any]) -> Dict[str, Any]:
     final_state = await orchestrator.run_graph(state)
     sanitized = orchestrator.sanitize_state(final_state)
     workflow_type = state.get("metadata", {}).get("workflow_type", "full")
-    if workflow_type == "problem_only":
+    if workflow_type in {"problem_only", "pre_tutor"}:
         current_step = _derive_current_step(sanitized)
     else:
         current_step = "completed" if sanitized else "initialized"

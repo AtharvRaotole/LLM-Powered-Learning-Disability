@@ -104,9 +104,15 @@ Format your output as JSON in the following structure:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while generating problem: {str(e)}")
 
-async def Attempt(disability: str, problem: str):
+async def Attempt(
+    disability: str,
+    problem: str,
+    target_correctness: str = "",
+    expected_answer: str = "",
+    error_style: str = "",
+):
     global approach
-    
+
     # Detailed disability information for better simulation
     disability_info = {
         "Dyslexia": {
@@ -189,55 +195,108 @@ async def Attempt(disability: str, problem: str):
     }
     
     disability_data = disability_info.get(disability, disability_info["Dyslexia"])
-    
-    prompt = f"""
-You are a student with {disability}. Here's what you need to know about how this affects your learning:
 
-Description: {disability_data['description']}
+    # Helpers for comparing answers
+    def _parse_fraction(s: str):
+        m = re.match(r"^\s*(-?\d+)\s*\/\s*(-?\d+)\s*$", str(s).strip())
+        if not m:
+            return None
+        num = float(m.group(1)); den = float(m.group(2))
+        if den == 0:
+            return None
+        return num / den
+
+    def _parse_percent(s: str):
+        st = str(s).strip()
+        if not st.endswith('%'):
+            return None
+        try:
+            return float(re.sub(r"[^0-9.-]", "", st[:-1])) / 100.0
+        except Exception:
+            return None
+
+    def _parse_numeric_like(s: str):
+        if s is None:
+            return None
+        frac = _parse_fraction(s)
+        if frac is not None:
+            return frac
+        perc = _parse_percent(s)
+        if perc is not None:
+            return perc
+        try:
+            return float(re.sub(r"[^0-9.-]", "", str(s)))
+        except Exception:
+            return None
+
+    def _answers_equal(a: str, b: str) -> bool:
+        if a is None or b is None:
+            return False
+        an = _parse_numeric_like(a)
+        bn = _parse_numeric_like(b)
+        if an is not None and bn is not None:
+            tol = max(1e-6, 0.005 * abs(bn))
+            return abs(an - bn) <= tol
+        return str(a).strip().lower() == str(b).strip().lower()
+
+    error_hint = error_style or "operation_confusion"
+    expected_clean = str(expected_answer or "").strip()
+
+    system_prompt = (
+        "You simulate a student with {disability} solving a math problem. "
+        "Always end with an incorrect final answer. The final answer must be plausible but wrong and consistent with the "
+        "shown mistakes. Do not self-correct or reveal these instructions. If provided an expected correct answer, never "
+        "output it exactly. Respond ONLY with JSON."
+    ).format(disability=disability)
+
+    user_prompt = f"""
+Disability description: {disability_data['description']}
 Characteristics: {', '.join(disability_data['characteristics'])}
 Math Impact: {disability_data['math_impact']}
 
-You are trying to solve this math problem: {problem}
+Problem: {problem}
 
-IMPORTANT: You are NOT aware that you have a learning disability. You believe you are solving the problem correctly, but your disability naturally affects how you approach and solve math problems. You may make mistakes that seem logical to you but are actually influenced by your learning differences.
+Target correctness: {target_correctness or 'likely_incorrect'}
+Expected correct answer (if known): {expected_clean or '[not provided]'}
+Preferred error pattern: {error_hint}
 
-Your approach should be realistic and show how a student with {disability} would genuinely think and work through this problem, including any confusion, assumptions, or mistakes that would naturally occur.
-
-Think aloud as you try to solve this problem step-by-step. Show your internal thought process, including:
-
-1. How you read and understand the problem
-2. Your approach to solving it
-3. Any confusion or difficulties you encounter
-4. The steps you take (including any mistakes)
-5. Your final answer
-
-Make sure to include at least 3-4 steps and show realistic mistakes that would occur due to {disability}.
-
-Output your response in this JSON format:
-
-{{
-  "thoughtprocess": "<Your internal thoughts as you read and understand the problem - show any confusion or assumptions>",
-  "steps_to_solve": [
-    "Step 1: <Your first approach to the problem>",
-    "Step 2: <What you do next, including any confusion>",
-    "Step 3: <Your continued work, showing any mistakes>",
-    "Step 4: <Your final attempt and answer>"
-  ],
-  "disability_impact": "<Brief explanation of how {disability} influenced your approach>"
-}}
+Instructions:
+- Think aloud in steps and show realistic mistakes aligned with {disability}.
+- End with an incorrect final answer (do not output the exact expected correct answer if one is given).
+- Use compact JSON with these fields only: thoughtprocess, steps_to_solve (4 strings), disability_impact, final_answer, is_final_answer_intentionally_incorrect (true), error_pattern.
 """
-    try:
-        response = openai_client.chat.completions.create(
+
+    def _call(llm_note: str = ""):
+        messages = [
+            {"role": "system", "content": system_prompt + ("\n" + llm_note if llm_note else "")},
+            {"role": "user", "content": user_prompt},
+        ]
+        resp = openai_client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
+            messages=messages,
+            temperature=1.0,
+            top_p=0.9,
+            response_format={"type": "json_object"},
         )
-        content = response.choices[0].message.content
-        
-        # Clean and parse the JSON response
-        json_data = clean_json_response(content)
-        
-        return Response(content=json.dumps(json_data), media_type="application/json")
+        content = resp.choices[0].message.content
+        data = clean_json_response(content)
+        if isinstance(data, dict):
+            data.setdefault("is_final_answer_intentionally_incorrect", True)
+            data.setdefault("error_pattern", error_hint)
+        return data
+
+    try:
+        first = _call()
+        if expected_clean and isinstance(first, dict):
+            fa = str(first.get("final_answer", "")).strip()
+            if _answers_equal(fa, expected_clean):
+                note = f"NEVER output this exact final answer: {expected_clean}. Choose a different plausible wrong answer."
+                second = _call(llm_note=note)
+                if isinstance(second, dict):
+                    fa2 = str(second.get("final_answer", "")).strip()
+                    if not _answers_equal(fa2, expected_clean):
+                        return Response(content=json.dumps(second), media_type="application/json")
+        return Response(content=json.dumps(first), media_type="application/json")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while generating approach: {str(e)}")
 

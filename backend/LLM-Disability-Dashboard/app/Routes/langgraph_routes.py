@@ -61,7 +61,7 @@ langgraph_router = APIRouter()
 async def healthcheck() -> Dict[str, Any]:
     return {
         "status": "ok",
-        "workflows": ["problem_only", "full", "analysis_only"],
+        "workflows": ["problem_only", "full", "analysis_only", "pre_tutor"],
     }
 
 

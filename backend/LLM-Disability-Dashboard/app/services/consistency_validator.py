@@ -1,6 +1,6 @@
 import re
 import json
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 from fastapi import HTTPException, Response
 
 def validate_response_consistency(problem: str, disability: str, student_attempt: Dict, expected_answer: str) -> Dict[str, Any]:
@@ -59,36 +59,85 @@ def validate_response_consistency(problem: str, disability: str, student_attempt
     
     return validation_results
 
+def _parse_fraction(s: str) -> Optional[float]:
+    m = re.match(r"^\s*(-?\d+)\s*\/\s*(-?\d+)\s*$", str(s).strip())
+    if not m:
+        return None
+    try:
+        num = float(m.group(1)); den = float(m.group(2))
+        if den == 0:
+            return None
+        return num / den
+    except Exception:
+        return None
+
+
+def _parse_percent(s: str) -> Optional[float]:
+    st = str(s).strip()
+    if not st.endswith('%'):
+        return None
+    try:
+        return float(re.sub(r"[^0-9.-]", "", st[:-1])) / 100.0
+    except Exception:
+        return None
+
+
+def _parse_numeric_like(s: Any) -> Optional[float]:
+    if s is None:
+        return None
+    # direct numeric
+    try:
+        return float(s)
+    except Exception:
+        pass
+    # fraction
+    frac = _parse_fraction(s)
+    if frac is not None:
+        return frac
+    # percent
+    perc = _parse_percent(s)
+    if perc is not None:
+        return perc
+    # find last number in text
+    nums = re.findall(r'[-+]?[0-9]*\.?[0-9]+', str(s))
+    if nums:
+        try:
+            return float(nums[-1])
+        except Exception:
+            return None
+    return None
+
+
 def extract_final_answer(student_attempt: Dict) -> str:
-    """Extract the final answer from student attempt."""
+    """Extract the final answer from student attempt, returning a numeric-like string when possible."""
     if not student_attempt:
         return ""
-    
-    # Try final_answer field first
+
+    # Try final_answer field first (sanitize to numeric-like if possible)
     if "final_answer" in student_attempt:
-        return str(student_attempt["final_answer"]).strip()
-    
-    # Try to extract from steps
+        raw = str(student_attempt["final_answer"]).strip()
+        num = _parse_numeric_like(raw)
+        return str(num) if num is not None else raw
+
+    # Try to extract from steps (last number wins)
     steps = student_attempt.get("steps_to_solve", [])
     if steps and len(steps) > 0:
         last_step = str(steps[-1])
-        # Look for numerical answer in the last step
-        numbers = re.findall(r'[-+]?[0-9]*\.?[0-9]+', last_step)
-        if numbers:
-            return numbers[-1]
-    
+        num = _parse_numeric_like(last_step)
+        if num is not None:
+            return str(num)
+
     # Try thoughtprocess
     thoughtprocess = student_attempt.get("thoughtprocess", "")
     if thoughtprocess:
-        numbers = re.findall(r'[-+]?[0-9]*\.?[0-9]+', str(thoughtprocess))
-        if numbers:
-            return numbers[-1]
-    
+        num = _parse_numeric_like(thoughtprocess)
+        if num is not None:
+            return str(num)
+
     return ""
 
 def check_step_answer_consistency(student_attempt: Dict, student_answer: str) -> Dict[str, Any]:
     """Check if the student's final answer matches their step-by-step work."""
-    
     steps = student_attempt.get("steps_to_solve", [])
     if not steps or not student_answer:
         return {
@@ -96,21 +145,25 @@ def check_step_answer_consistency(student_attempt: Dict, student_answer: str) ->
             "status": "incomplete",
             "details": "Missing steps or final answer"
         }
-    
+    # Student final answer numeric value (if possible)
+    student_val = _parse_numeric_like(student_answer)
     # Look for numerical answers in steps
-    step_answers = []
+    step_answers: List[str] = []
     for step in steps:
         numbers = re.findall(r'[-+]?[0-9]*\.?[0-9]+', str(step))
         if numbers:
             step_answers.extend(numbers)
-    
-    # Check if final answer appears in steps
-    final_answer_found = any(
-        abs(float(student_answer) - float(step_answer)) < 0.01 
-        for step_answer in step_answers 
-        if step_answer.replace('.', '').replace('-', '').isdigit()
-    )
-    
+
+    final_answer_found = False
+    if student_val is not None and step_answers:
+        for step_answer in step_answers:
+            try:
+                if abs(student_val - float(step_answer)) < 0.01:
+                    final_answer_found = True
+                    break
+            except Exception:
+                continue
+
     score = 1.0 if final_answer_found else 0.3
     status = "consistent" if final_answer_found else "inconsistent"
     
@@ -194,17 +247,19 @@ def validate_disability_behavior(disability: str, student_attempt: Dict, problem
 
 def validate_mathematical_reasoning(student_attempt: Dict, problem: str, expected_answer: str) -> Dict[str, Any]:
     """Validate the mathematical reasoning in the student's response."""
-    
     steps = student_attempt.get("steps_to_solve", [])
     student_answer = extract_final_answer(student_attempt)
-    
+
     if not steps or not student_answer:
         return {
             "score": 0.0,
             "status": "incomplete",
             "details": "Missing mathematical work"
         }
-    
+    # Parse numeric-like values
+    student_num = _parse_numeric_like(student_answer)
+    expected_num = _parse_numeric_like(expected_answer)
+
     # Check for mathematical operations
     has_operations = any(
         any(op in str(step).lower() for op in ["+", "-", "×", "*", "÷", "/", "=", "equals"])
@@ -214,12 +269,13 @@ def validate_mathematical_reasoning(student_attempt: Dict, problem: str, expecte
     # Check for logical progression
     has_progression = len(steps) >= 2
     
-    # Check if answer is reasonable (within 50% of expected)
-    try:
-        student_num = float(student_answer)
-        expected_num = float(expected_answer)
-        reasonable_answer = abs(student_num - expected_num) / expected_num < 0.5 if expected_num != 0 else True
-    except (ValueError, ZeroDivisionError):
+    # Check if answer is reasonable (within 50% of expected), only if expected is numeric-like
+    if expected_num is not None and student_num is not None:
+        try:
+            reasonable_answer = abs(student_num - expected_num) / expected_num < 0.5 if expected_num != 0 else True
+        except ZeroDivisionError:
+            reasonable_answer = True
+    else:
         reasonable_answer = False
     
     score = sum([has_operations, has_progression, reasonable_answer]) / 3

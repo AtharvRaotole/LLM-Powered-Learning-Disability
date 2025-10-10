@@ -10,12 +10,15 @@ export default function Tutor(){
     const {id}=useParams();
     const disability=DisabilitiesEnum[id];
     const problem=sessionStorage.getItem('problem');
+    const problemJsonRaw = sessionStorage.getItem('problem_json');
+    const problemObj = (() => { try { return problemJsonRaw ? JSON.parse(problemJsonRaw) : null; } catch { return null; } })();
     const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
     const difficulty = sessionStorage.getItem('difficulty') || 'medium';
 
     const[response,setResponse]=useState(null);
     const[testResult,setTestResult]=useState(null);
     const[passFail,setPassFail]=useState(null);
+    const[quickCheckPassed,setQuickCheckPassed]=useState(null);
     const[consistencyResults,setConsistencyResults]=useState(null);
     const[isLoading,setIsLoading]=useState(true);
     const[error,setError]=useState(null);
@@ -55,6 +58,8 @@ export default function Tutor(){
 
         async function orchestrate(){
             if (!disability || !problem) {
+                setIsLoading(false);
+                setError("Please generate a problem and select a disability to start the tutor session.");
                 return;
             }
             setIsLoading(true);
@@ -64,10 +69,19 @@ export default function Tutor(){
                     grade_level: gradeLevel,
                     difficulty,
                     disability,
-                    problem,
+                    // Pass the full problem object when available so the
+                    // backend can access the canonical expected answer.
+                    problem: problemObj || problem,
+                    metadata: {
+                        // Bias simulation correctness based on recent performance
+                        // (fallback to balanced if insufficient data)
+                        target_correctness: estimateTargetCorrectness(),
+                    },
                 };
 
-                let analysis = await getOrRunFullWorkflow(payload);
+                // Force refresh so target correctness bias applies and we avoid
+                // returning cached simulations that ignore new metadata.
+                let analysis = await getOrRunFullWorkflow(payload, { forceRefresh: true });
                 let studentAttempt = analysis?.results?.student_simulation;
                 let thoughtAnalysis = analysis?.results?.thought_analysis;
                 let tutorSession = analysis?.results?.tutor_session;
@@ -117,29 +131,34 @@ export default function Tutor(){
                     }
                     const studentAnswer = extractFinalAnswer(testAttemptJson);
                     const expectedAnswer = (tutorSession.expected_answer || "").toString().trim();
-                    passed = normalizeAnswer(studentAnswer) === normalizeAnswer(expectedAnswer) && expectedAnswer !== "";
+                    const quickPass = compareAnswers(studentAnswer, expectedAnswer) && expectedAnswer !== "";
+                    setQuickCheckPassed(quickPass);
                     setTestResult({
                         question: tutorSession.test_question,
                         expected: expectedAnswer,
                         student: testAttemptJson,
                         studentAnswer,
                     });
-                    setPassFail(passed ? 'pass' : 'fail');
-                } else if (consistency) {
-                    const score = consistency.overall_consistency_score || 0;
-                    const hasCriticalFlag = (consistency.flags || []).length > 0;
-                    passed = score >= 0.7 && !hasCriticalFlag;
-                    setPassFail(passed ? 'pass' : 'fail');
-                } else {
-                    setPassFail(null);
                 }
+
+                // Compute correctness vs original problem (base session correctness on original attempt only)
+                const originalExpected = (problemObj && problemObj.answer) ? String(problemObj.answer) : (sessionStorage.getItem('answer') || "");
+                const studentFinal = extractFinalAnswer(studentAttempt);
+                const originalCorrect = originalExpected ? compareAnswers(studentFinal, originalExpected) : false;
+                setPassFail(originalCorrect ? 'pass' : 'fail');
 
                 SessionManager.saveSession({
                     difficulty,
                     gradeLevel,
                     disability,
-                    consistency_score: consistency?.overall_consistency_score || 0,
-                    is_correct: passed,
+                    // Use binary consistency_score derived from original correctness (no percentage calc)
+                    consistency_score: originalCorrect ? 1 : 0,
+                    // Session correctness derives from original attempt only
+                    is_correct: originalCorrect,
+                    is_correct_quickcheck: typeof quickCheckPassed === 'boolean' ? quickCheckPassed : null,
+                    is_correct_original: originalCorrect,
+                    student_final_answer: studentFinal,
+                    expected_answer: originalExpected || (tutorSession?.expected_answer || ""),
                     problem,
                     duration: Math.floor(Math.random() * 300) + 60,
                     timestamp: Date.now(),
@@ -261,28 +280,14 @@ export default function Tutor(){
                                 <div className={classes.testResult}>
                                     <div>Student Attempt: {testResult.studentAnswer || 'N/A'}</div>
                                     <div>
-                                        Result: {passFail === 'pass' ? '✅ Mastered' : '❌ Needs Review'}
+                                        Result: {quickCheckPassed ? '✅ Mastered' : '❌ Needs Review'}
                                     </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {consistencyResults && (
-                        <div className={classes.section}>
-                            <div className={classes.sectionTitle}>✅ Consistency Validation</div>
-                            <div className={classes.consistencyScore}>
-                                Overall Consistency: {(consistencyResults.overall_consistency_score * 100).toFixed(1)}%
-                            </div>
-                            {consistencyResults.recommendations && (
-                                <ul className={classes.recommendationsList}>
-                                    {consistencyResults.recommendations.map((rec, idx) => (
-                                        <li key={idx}>{rec}</li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    )}
+                    {/* Removed consistency percentage display; correctness is based on original attempt */}
 
                     {passFail && (
                         <div className={classes.summaryCard}>
@@ -309,14 +314,57 @@ function extractFinalAnswer(attempt) {
     return "";
 }
 
-function normalizeAnswer(value) {
-    if (value == null) return "";
-    const sanitized = String(value).trim().toLowerCase();
-    const numeric = Number(sanitized.replace(/[^0-9.-]/g, ''));
-    if (!Number.isNaN(numeric)) {
-        return String(numeric);
+function parseFraction(s) {
+    const m = String(s).trim().match(/^\s*(-?\d+)\s*\/\s*(-?\d+)\s*$/);
+    if (!m) return null;
+    const num = parseFloat(m[1]);
+    const den = parseFloat(m[2]);
+    if (Number.isNaN(num) || Number.isNaN(den) || den === 0) return null;
+    return num / den;
+}
+
+function parsePercent(s) {
+    const str = String(s).trim();
+    if (!str.endsWith('%')) return null;
+    const v = Number(str.slice(0, -1).replace(/[^0-9.-]/g, ''));
+    if (Number.isNaN(v)) return null;
+    return v / 100;
+}
+
+function parseNumericLike(s) {
+    if (s == null) return null;
+    const frac = parseFraction(s);
+    if (frac != null) return frac;
+    const perc = parsePercent(s);
+    if (perc != null) return perc;
+    const num = Number(String(s).replace(/[^0-9.-]/g, ''));
+    return Number.isNaN(num) ? null : num;
+}
+
+function compareAnswers(a, b) {
+    if (a == null || b == null) return false;
+    const an = parseNumericLike(a);
+    const bn = parseNumericLike(b);
+    if (an != null && bn != null) {
+        const tol = Math.max(1e-6, 0.005 * Math.abs(bn)); // 0.5% or epsilon
+        return Math.abs(an - bn) <= tol;
     }
-    return sanitized;
+    // Fallback to case-insensitive trimmed comparison
+    return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+
+function estimateTargetCorrectness() {
+    try {
+        const sessions = SessionManager.getAllSessions();
+        const recent = sessions.slice(0, 6);
+        if (recent.length < 2) return 'balanced';
+        const passRate = recent.filter(s => s.is_correct === true).length / recent.length;
+        if (passRate >= 0.7) return 'likely_correct';
+        if (passRate <= 0.4) return 'likely_incorrect';
+        return 'balanced';
+    } catch {
+        return 'balanced';
+    }
 }
 
 function getEmotionEmoji(emotion) {

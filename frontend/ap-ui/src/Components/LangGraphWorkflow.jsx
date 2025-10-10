@@ -12,6 +12,9 @@ export default function LangGraphWorkflow() {
     const [difficulty, setDifficulty] = useState("medium");
     const [disability, setDisability] = useState("Dyslexia");
     const [workflowType, setWorkflowType] = useState("full");
+    const [tutorSession, setTutorSession] = useState(null);
+    const [isTutorLoading, setIsTutorLoading] = useState(false);
+    const [tutorError, setTutorError] = useState(null);
 
     const disabilities = [
         "Dyslexia",
@@ -26,17 +29,53 @@ export default function LangGraphWorkflow() {
     const workflowTypes = [
         { value: "problem_only", label: "Generate Problem Only" },
         { value: "full", label: "Full Student Simulation" },
+        { value: "pre_tutor", label: "Up To Strategies (Pre-Tutor)" },
         { value: "analysis_only", label: "Analysis Only" }
     ];
+
+    async function startTutorSession() {
+        try {
+            setIsTutorLoading(true);
+            setTutorError(null);
+            const gp = (workflowData?.results?.generated_problem) || null;
+            const problemText = gp?.problem || '';
+            const studentAttempt = workflowData?.results?.student_simulation || null;
+            const thoughtAnalysis = workflowData?.results?.thought_analysis || null;
+            if (!problemText || !studentAttempt) {
+                throw new Error('Missing problem or student attempt for tutor session');
+            }
+
+            const resp = await fetch('http://localhost:8000/api/v1/openai/generate_tutor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    disability,
+                    problem: problemText,
+                    student_attempt: JSON.stringify(studentAttempt),
+                    thought_analysis: JSON.stringify(thoughtAnalysis || {}),
+                })
+            });
+            if (!resp.ok) {
+                throw new Error(`Tutor session failed (${resp.status})`);
+            }
+            const data = await resp.json();
+            setTutorSession(data);
+        } catch (err) {
+            setTutorError(err.message || 'Failed to start tutor session');
+        } finally {
+            setIsTutorLoading(false);
+        }
+    }
 
     async function runWorkflow() {
         setIsLoading(true);
         setError(null);
         setWorkflowData(null);
+        setTutorSession(null);
         setCurrentStep("Starting workflow...");
 
         try {
-            const response = await fetch('http://localhost:8000/api/v2/langgraph/full-workflow', {
+            const response = await fetch('http://localhost:8000/api/v2/langgraph/workflow', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -329,34 +368,57 @@ export default function LangGraphWorkflow() {
                                         ))}
                                     </ul>
                                 </div>
+                                {(workflowType === 'pre_tutor' || !workflowData.results?.tutor_session) && (
+                                    <div className={classes.tutorCta}>
+                                        <button
+                                            className={classes.primaryBtn}
+                                            onClick={startTutorSession}
+                                            disabled={isTutorLoading}
+                                        >
+                                            {isTutorLoading ? '⏳' : '👨‍🏫'} Start Tutor Session
+                                        </button>
+                                        {tutorError && (
+                                            <div className={classes.error} style={{ marginTop: 8 }}>
+                                                <div className={classes.errorIcon}>❌</div>
+                                                <div className={classes.errorText}>{tutorError}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Consistency Validation */}
-                    {workflowData.results?.consistency_validation && (
+                    {/* Tutor Session (on-demand) */}
+                    {tutorSession && (
                         <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>✅ Consistency Validation</h4>
-                            <div className={classes.validationContent}>
-                                <div className={classes.validationScore}>
-                                    <strong>Overall Consistency Score:</strong> 
-                                    {(workflowData.results.consistency_validation.overall_consistency_score * 100).toFixed(1)}%
-                                </div>
-                                {workflowData.results.consistency_validation.recommendations && (
-                                    <div className={classes.recommendations}>
-                                        <strong>Recommendations:</strong>
-                                        <ul>
-                                            {workflowData.results.consistency_validation.recommendations.map((rec, index) => (
-                                                <li key={index}>{rec}</li>
-                                            ))}
-                                        </ul>
+                            <h4 className={classes.sectionTitle}>👨‍🏫 Tutor Session</h4>
+                            <div className={classes.conversation}>
+                                {tutorSession.conversation?.map((turn, idx) => (
+                                    <div key={idx} className={turn.speaker === 'Tutor' ? classes.tutorTurn : classes.studentTurn}>
+                                        <div className={classes.speaker}><strong>{turn.speaker}:</strong></div>
+                                        <div>{turn.text}</div>
+                                        <div className={classes.meta}>
+                                            {turn.strategy && <em>Strategy: {turn.strategy}</em>}
+                                            {turn.emotion && <em> Emotion: {turn.emotion}</em>}
+                                        </div>
                                     </div>
-                                )}
+                                ))}
                             </div>
+                            {tutorSession.test_question && (
+                                <div className={classes.quickCheck}>
+                                    <strong>Quick Check:</strong> {tutorSession.test_question}
+                                    <div><em>Expected:</em> {tutorSession.expected_answer}</div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
             )}
         </div>
     );
+}
+
+async function startTutorSession() {
+    this.setState?.(); // no-op for bundlers; function defined within component below
 }
