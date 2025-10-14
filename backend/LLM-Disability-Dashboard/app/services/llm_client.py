@@ -7,6 +7,7 @@ import os
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 from fastapi import Response
+from openai import OpenAI
 
 from .cache import LLMCache, cache_config_from_env
 
@@ -28,6 +29,7 @@ class LLMClient:
         env_flag = os.getenv("LANGGRAPH_CACHE_ENABLED", "true").strip().lower()
         self._cache_enabled = env_flag not in {"0", "false", "no", "off"}
         self._last_cache_hit = False
+        self._openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     async def invoke(
         self,
@@ -55,6 +57,49 @@ class LLMClient:
             self._cache.set(cache_key, normalized)
 
         return normalized
+
+    async def invoke_with_prompt(
+        self,
+        prompt: str,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.5,
+        use_cache: bool = True,
+    ) -> JSONLike:
+        """Execute a direct prompt call to OpenAI and return normalized JSON response."""
+        
+        cache_key: Optional[str] = None
+        if self._cache_enabled and use_cache:
+            cache_key = self._make_prompt_cache_key(prompt, model, temperature)
+            cached = self._cache.get(cache_key)
+            if cached is not None:
+                self._last_cache_hit = True
+                return cached
+
+        try:
+            response = self._openai_client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+                response_format={"type": "json_object"}
+            )
+            
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Empty response from OpenAI")
+                
+            # Parse JSON response
+            json_data = json.loads(content)
+            normalized = self._normalize_payload(json_data)
+            
+            self._last_cache_hit = False
+            
+            if cache_key is not None and self._cache_enabled and use_cache:
+                self._cache.set(cache_key, normalized)
+                
+            return normalized
+            
+        except Exception as e:
+            raise ValueError(f"Error calling OpenAI: {str(e)}")
 
     def ensure_dict(self, data: Union[str, Dict[str, Any], None]) -> Dict[str, Any]:
         """Ensure the provided data is returned as a dictionary."""
@@ -130,6 +175,17 @@ class LLMClient:
             "module": getattr(handler, "__module__", ""),
             "args": self._prepare_for_cache(args),
             "kwargs": self._prepare_for_cache(kwargs),
+        }
+        serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    def _make_prompt_cache_key(self, prompt: str, model: str, temperature: float) -> str:
+        """Create cache key for direct prompt calls."""
+        payload = {
+            "type": "prompt",
+            "prompt": prompt,
+            "model": model,
+            "temperature": temperature,
         }
         serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
