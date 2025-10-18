@@ -17,7 +17,7 @@ export default function Thought(){
     
     useEffect(()=>{
         async function fetchLegacyThought(currentDisability){
-            const response = await fetch("http://localhost:8000/api/v1/openai/generate_thought", {
+            const response = await fetch("http://localhost:8001/api/v1/openai/generate_thought", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

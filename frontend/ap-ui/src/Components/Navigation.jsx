@@ -146,6 +146,13 @@ export default function Navigation(){
                     <span className={classes.buttonIcon}>💬</span>
                     <span>AI Tutor Chat</span>
                 </button>
+                <button 
+                    className={classes.navButton}
+                    onClick={() => navigate('/langgraph-workflow')}
+                >
+                    <span className={classes.buttonIcon}>🔄</span>
+                    <span>LangGraph Workflow</span>
+                </button>
             </div>
         </div>
     )

@@ -25,7 +25,7 @@ export default function Tutor(){
 
     useEffect(()=>{
         async function fetchLegacyAttempt(currentDisability, question) {
-            const response = await fetch("http://localhost:8000/api/v1/openai/generate_attempt", {
+            const response = await fetch("http://localhost:8001/api/v1/openai/generate_attempt", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -40,7 +40,7 @@ export default function Tutor(){
         }
 
         async function fetchLegacyTutor(currentDisability, studentAttempt, thoughtAnalysis) {
-            const response = await fetch("http://localhost:8000/api/v1/openai/generate_tutor", {
+            const response = await fetch("http://localhost:8001/api/v1/openai/generate_tutor", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

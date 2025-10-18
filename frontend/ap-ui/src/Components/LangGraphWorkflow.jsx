@@ -6,6 +6,7 @@ export default function LangGraphWorkflow() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [currentStep, setCurrentStep] = useState("");
+    const [lastGeneratedProblem, setLastGeneratedProblem] = useState(null);
 
     // Form state
     const [gradeLevel, setGradeLevel] = useState("7th");
@@ -45,7 +46,7 @@ export default function LangGraphWorkflow() {
                 throw new Error('Missing problem or student attempt for tutor session');
             }
 
-            const resp = await fetch('http://localhost:8000/api/v1/openai/generate_tutor', {
+            const resp = await fetch('http://localhost:8001/api/v1/openai/generate_tutor', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -74,8 +75,11 @@ export default function LangGraphWorkflow() {
         setTutorSession(null);
         setCurrentStep("Starting workflow...");
 
+        // If we have a previously generated problem, reuse it
+        const existingProblem = lastGeneratedProblem;
+
         try {
-            const response = await fetch('http://localhost:8000/api/v2/langgraph/workflow', {
+            const response = await fetch('http://localhost:8001/api/v2/langgraph/workflow', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -85,6 +89,7 @@ export default function LangGraphWorkflow() {
                     difficulty: difficulty,
                     disability: disability,
                     workflow_type: workflowType,
+                    problem: existingProblem, // Reuse existing problem if available
                     metadata: workflowType === "problem_only" ? { refresh_problem: true } : undefined
                 })
             });
@@ -95,6 +100,8 @@ export default function LangGraphWorkflow() {
 
             const data = await response.json();
             console.log('Workflow result:', data);
+            console.log('Student simulation data:', data.results?.student_simulation);
+            console.log('Steps field:', data.results?.student_simulation?.steps);
             
             setWorkflowData(data);
             setCurrentStep(data.current_step || "completed");
@@ -115,7 +122,7 @@ export default function LangGraphWorkflow() {
         setCurrentStep("Generating problem...");
 
         try {
-            const response = await fetch('http://localhost:8000/api/v2/langgraph/generate-problem', {
+            const response = await fetch('http://localhost:8001/api/v2/langgraph/generate-problem', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -123,6 +130,7 @@ export default function LangGraphWorkflow() {
                 body: JSON.stringify({
                     grade_level: gradeLevel,
                     difficulty: difficulty,
+                    disability: disability,
                     workflow_type: "problem_only",
                     metadata: { refresh_problem: true }
                 })
@@ -135,7 +143,9 @@ export default function LangGraphWorkflow() {
             const data = await response.json();
             console.log('Problem generated:', data);
             
-            setWorkflowData({ results: { generated_problem: data } });
+            const problem = data.results.generated_problem;
+            setWorkflowData({ results: { generated_problem: problem } });
+            setLastGeneratedProblem(problem); // Store for reuse
             setCurrentStep("problem_generated");
             
         } catch (err) {
@@ -242,6 +252,9 @@ export default function LangGraphWorkflow() {
                     disabled={isLoading}
                 >
                     {isLoading ? '⏳' : '🔄'} Run Full Workflow
+                    {lastGeneratedProblem && !isLoading && (
+                        <span className={classes.reuseIndicator}> (will reuse existing problem)</span>
+                    )}
                 </button>
                 
                 <button 
@@ -251,6 +264,19 @@ export default function LangGraphWorkflow() {
                 >
                     {isLoading ? '⏳' : '📚'} Generate Problem Only
                 </button>
+                
+                {lastGeneratedProblem && (
+                    <button 
+                        className={classes.clearBtn}
+                        onClick={() => {
+                            setLastGeneratedProblem(null);
+                            setWorkflowData(null);
+                        }}
+                        disabled={isLoading}
+                    >
+                        🗑️ Clear Problem
+                    </button>
+                )}
             </div>
 
             {/* Status */}
@@ -309,19 +335,19 @@ export default function LangGraphWorkflow() {
                             <div className={classes.simulationContent}>
                                 <div className={classes.thoughtProcess}>
                                     <strong>Thought Process:</strong>
-                                    <p>{workflowData.results.student_simulation.thoughtprocess}</p>
+                                    <p>
+                                        {workflowData.results.student_simulation.steps || 
+                                         workflowData.results.student_simulation.thoughtprocess || 
+                                         'No thought process available'}
+                                    </p>
                                 </div>
                                 <div className={classes.steps}>
-                                    <strong>Steps to Solve:</strong>
-                                    <ol>
-                                        {workflowData.results.student_simulation.steps_to_solve?.map((step, index) => (
-                                            <li key={index}>{step}</li>
-                                        ))}
-                                    </ol>
+                                    <strong>Final Answer:</strong>
+                                    <p><strong>{workflowData.results.student_simulation.final_answer || 'No answer provided'}</strong></p>
                                 </div>
                                 <div className={classes.disabilityImpact}>
                                     <strong>Disability Impact:</strong>
-                                    <p>{workflowData.results.student_simulation.disability_impact}</p>
+                                    <p>{workflowData.results.student_simulation.disability_impact || workflowData.results.thought_analysis?.disability_impact || 'No disability impact analysis available'}</p>
                                 </div>
                             </div>
                         </div>
@@ -333,16 +359,35 @@ export default function LangGraphWorkflow() {
                             <h4 className={classes.sectionTitle}>🧠 Thought Analysis</h4>
                             <div className={classes.analysisContent}>
                                 <div className={classes.analysisText}>
-                                    {workflowData.results.thought_analysis.thought}
+                                    <strong>Cognitive Patterns:</strong>
+                                    <p>{workflowData.results.thought_analysis.cognitive_patterns || 'No analysis available'}</p>
                                 </div>
                                 <div className={classes.mistakeAnalysis}>
-                                    <strong>Mistake Analysis:</strong>
-                                    <ul>
-                                        <li>Type: {workflowData.results.thought_analysis.mistake_analysis?.type}</li>
-                                        <li>Severity: {workflowData.results.thought_analysis.mistake_analysis?.severity}</li>
-                                        <li>Frequency: {workflowData.results.thought_analysis.mistake_analysis?.frequency}</li>
-                                    </ul>
+                                    <strong>Error Analysis:</strong>
+                                    <p>{workflowData.results.thought_analysis.error_analysis || 'No error analysis available'}</p>
                                 </div>
+                                <div className={classes.disabilityImpact}>
+                                    <strong>Disability Impact:</strong>
+                                    <p>{workflowData.results.thought_analysis.disability_impact || 'No disability impact analysis available'}</p>
+                                </div>
+                                {workflowData.results.thought_analysis.strengths && (
+                                    <div className={classes.strengths}>
+                                        <strong>Strengths:</strong>
+                                        <p>{workflowData.results.thought_analysis.strengths}</p>
+                                    </div>
+                                )}
+                                {workflowData.results.thought_analysis.growth_areas && (
+                                    <div className={classes.growthAreas}>
+                                        <strong>Growth Areas:</strong>
+                                        <p>{workflowData.results.thought_analysis.growth_areas}</p>
+                                    </div>
+                                )}
+                                {workflowData.results.thought_analysis.confidence_level && (
+                                    <div className={classes.confidenceLevel}>
+                                        <strong>Confidence Level:</strong>
+                                        <p>{workflowData.results.thought_analysis.confidence_level}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -353,11 +398,25 @@ export default function LangGraphWorkflow() {
                             <h4 className={classes.sectionTitle}>💡 Teaching Strategies</h4>
                             <div className={classes.strategiesContent}>
                                 <div className={classes.strategyGroup}>
-                                    <strong>Immediate Strategies:</strong>
+                                    <strong>Primary Strategies:</strong>
                                     <ul>
-                                        {workflowData.results.teaching_strategies.immediate_strategies?.map((strategy, index) => (
-                                            <li key={index}>{strategy}</li>
-                                        ))}
+                                        {workflowData.results.teaching_strategies.primary_strategies?.map((strategy, index) => (
+                                            <li key={index}>
+                                                <strong>{strategy.name}:</strong> {strategy.description}
+                                                <br />
+                                                <em>Rationale:</em> {strategy.rationale}
+                                                {strategy.implementation && (
+                                                    <div>
+                                                        <strong>Implementation:</strong>
+                                                        <ol>
+                                                            {strategy.implementation.map((step, stepIndex) => (
+                                                                <li key={stepIndex}>{step}</li>
+                                                            ))}
+                                                        </ol>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        )) || <li>No strategies available</li>}
                                     </ul>
                                 </div>
                                 <div className={classes.strategyGroup}>
@@ -365,9 +424,44 @@ export default function LangGraphWorkflow() {
                                     <ul>
                                         {workflowData.results.teaching_strategies.accommodations?.map((accommodation, index) => (
                                             <li key={index}>{accommodation}</li>
-                                        ))}
+                                        )) || <li>No accommodations available</li>}
                                     </ul>
                                 </div>
+                                {workflowData.results.teaching_strategies.alternative_approaches && (
+                                    <div className={classes.strategyGroup}>
+                                        <strong>Alternative Approaches:</strong>
+                                        <ul>
+                                            {workflowData.results.teaching_strategies.alternative_approaches.map((approach, index) => (
+                                                <li key={index}>
+                                                    <strong>{approach.name}:</strong> {approach.description}
+                                                    {approach.when_to_use && (
+                                                        <div><em>When to use:</em> {approach.when_to_use}</div>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                {workflowData.results.teaching_strategies.scaffolding_sequence && (
+                                    <div className={classes.strategyGroup}>
+                                        <strong>Scaffolding Sequence:</strong>
+                                        <ol>
+                                            {workflowData.results.teaching_strategies.scaffolding_sequence.map((step, index) => (
+                                                <li key={index}>{step}</li>
+                                            ))}
+                                        </ol>
+                                    </div>
+                                )}
+                                {workflowData.results.teaching_strategies.assessment_methods && (
+                                    <div className={classes.strategyGroup}>
+                                        <strong>Assessment Methods:</strong>
+                                        <ul>
+                                            {workflowData.results.teaching_strategies.assessment_methods.map((method, index) => (
+                                                <li key={index}>{method}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                                 {(workflowType === 'pre_tutor' || !workflowData.results?.tutor_session) && (
                                     <div className={classes.tutorCta}>
                                         <button

@@ -17,7 +17,7 @@ export default function Attempt(){
     
     useEffect(() => {
         async function fetchLegacyAttempt(currentDisability) {
-            const legacyResponse = await fetch("http://localhost:8000/api/v1/openai/generate_attempt", {
+            const legacyResponse = await fetch("http://localhost:8001/api/v1/openai/generate_attempt", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
