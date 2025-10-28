@@ -65,7 +65,7 @@
     font-family: var(--font-family-primary);
 }
 
-.conversationContainer {
+/* .conversationContainer {
     margin-bottom: var(--space-8);
 }
 
@@ -159,15 +159,15 @@
 }
 
 /* Message Bubble Styles */
-.tutorTurn,
+/* .tutorTurn,
 .studentTurn {
     display: flex;
     gap: var(--space-4);
     align-items: flex-start;
     animation: slideIn 0.3s ease-out;
-}
+} */
 
-@keyframes slideIn {
+/* @keyframes slideIn {
     from {
         opacity: 0;
         transform: translateY(10px);
@@ -190,9 +190,9 @@
     font-size: 2.5rem;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     flex-shrink: 0;
-}
+} */
 
-.messageContent {
+/* .messageContent {
     flex: 1;
     max-width: 75%;
 }
@@ -253,9 +253,9 @@
     border-radius: var(--radius-full);
     font-size: var(--font-size-xs);
     font-weight: 600;
-}
+} */
 
-.strategyTag {
+/* .strategyTag {
     background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
     color: #5b21b6;
     border: 1px solid #c4b5fd;
@@ -269,10 +269,10 @@
 
 .tagIcon {
     font-size: var(--font-size-sm);
-}
+} */
 
 /* Legacy styles for backward compatibility */
-.speaker {
+/* .speaker {
     font-weight: 700;
     color: #1e293b;
     font-size: 0.95rem;
@@ -290,9 +290,9 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.025em;
-}
+}  */
 
-.emotion {
+/* .emotion {
     margin-top: 8px;
     font-size: 0.8rem;
     color: #64748b;
@@ -676,7 +676,7 @@
 }
 
 /* Consistency Validation Styles */
-.consistencySection {
+/* .consistencySection {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-radius: 16px;
     padding: 24px;
@@ -706,9 +706,9 @@
     font-weight: 800;
     padding: 8px 16px;
     border-radius: 12px;
-}
+} */ 
 
-.highScore {
+/* .highScore {
     background: #dcfce7;
     color: #166534;
 }
@@ -803,8 +803,6 @@
     font-weight: 600;
     font-size: 0.9rem;
 }
-
-/* Responsive design */
 @media (max-width: 768px) {
     .container {
         margin: 10px;
@@ -854,7 +852,6 @@
     }
 }
 
-/* Performance Analysis Section */
 .performanceSection {
     margin-top: var(--space-8);
     padding: var(--space-6);
@@ -868,9 +865,9 @@
 .performanceHeader {
     text-align: center;
     margin-bottom: var(--space-6);
-}
+} */
 
-.performanceHeader h3 {
+/* .performanceHeader h3 {
     font-family: var(--font-family-heading);
     font-size: var(--font-size-xl);
     font-weight: 700;
@@ -986,9 +983,9 @@
     transform: translateY(-3px) scale(1.02);
     box-shadow: var(--shadow-xl);
     background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-accent-purple-dark) 100%);
-}
+} */
 
-.newProblemBtn {
+/* .newProblemBtn {
     background: rgba(255, 255, 255, 0.9);
     color: var(--color-secondary-700);
     border: 2px solid var(--color-secondary-200);
@@ -1010,9 +1007,9 @@
     border-color: var(--color-secondary-300);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-}
+} */
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
     .performanceMetrics {
         grid-template-columns: 1fr;
     }
@@ -1028,4 +1025,65 @@
         max-width: 300px;
         justify-content: center;
     }
+} */
+
+
+.stepsContainer {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 24px;
+
+}
+
+.stepsTitle {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.step {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.step:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.step:nth-child(odd) {
+    border-left: 4px solid #667eea;
+}
+.step:nth-child(even) {
+    border-left: 4px solid #10b981;
+}
+.stepNumber {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.step:nth-child(odd) .stepNumber {
+    color: #667eea; /* purple */
+}
+.step:nth-child(even) .stepNumber {
+    color: #10b981; /* green */
+}
+.stepContent {
+    color: #475569;
+    line-height: 1.6;
+    font-size: 1rem;
 }

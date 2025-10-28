@@ -45,7 +45,6 @@ export default function Attempt(){
                     disability: currentDisability,
                     problem,
                 };
-
                 let analysis = await getOrRunFullWorkflow(payload);
                 let attemptData = analysis?.results?.student_simulation;
 
@@ -54,9 +53,9 @@ export default function Attempt(){
                     attemptData = analysis?.results?.student_simulation;
                 }
 
-                if (!attemptData) {
-                    attemptData = await fetchLegacyAttempt(currentDisability);
-                }
+                // if (!attemptData) {
+                //     attemptData = await fetchLegacyAttempt(currentDisability);
+                // }
 
                 setResponse(attemptData);
             } catch (err) {
@@ -99,6 +98,18 @@ export default function Attempt(){
             
             {response && !isLoading && (
                 <>
+                {
+                    response.studentAnswer && (
+                        <div className={classes.stepsContainer}>
+                            <div className={classes.stepsTitle}>
+                                Student's answer
+                            </div>
+                            <div className={classes.attemptContent}>
+                                {response.studentAnswer}
+                            </div>
+                        </div>
+                    )
+                }
                     {response.thoughtprocess && (
                         <div className={classes.thoughtProcess}>
                             <div className={classes.thoughtProcessTitle}>

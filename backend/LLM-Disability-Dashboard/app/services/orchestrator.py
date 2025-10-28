@@ -10,6 +10,7 @@ from langgraph.graph import END, StateGraph
 from .langgraph_state import LearningSessionState
 from .llm_client import LLMClient
 from .prompt_registry import PromptRegistry
+from .prompts import get_workflow_prompts
 
 
 class LangGraphOrchestrator:
@@ -23,6 +24,7 @@ class LangGraphOrchestrator:
     ) -> None:
         self.registry = registry or PromptRegistry()
         self.llm_client = llm_client or LLMClient()
+        self.prompts = get_workflow_prompts()
         self._graph = self._build_graph()
 
     # ------------------------------------------------------------------
@@ -218,11 +220,20 @@ class LangGraphOrchestrator:
         if workflow_type == "analysis_only" and state.get("problem"):
             return {}
 
-        handler = self.registry.get("generate_problem")
+        # Use structured prompt for problem generation
         grade_level = state.get("grade_level", "7th")
         difficulty = state.get("difficulty", "medium")
-
-        payload = await self.llm_client.invoke(handler, grade_level, difficulty)
+        
+        # Get the enhanced prompt
+        prompt = self.prompts.get_problem_generation_prompt(grade_level, difficulty)
+        
+        # Use the LLM client directly with the structured prompt
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.5
+        )
+        
         if not isinstance(payload, dict) or not payload:
             raise HTTPException(status_code=500, detail="Problem generation returned empty payload")
         self._record_cache(state, "generate_problem")
@@ -240,8 +251,7 @@ class LangGraphOrchestrator:
         if not problem_text:
             raise HTTPException(status_code=400, detail="Problem text missing for attempt simulation")
 
-        handler = self.registry.get("simulate_student")
-        # Allow frontends to bias correctness via metadata
+        # Use structured prompts for student attempt simulation
         metadata = state.get("metadata") or {}
         target = metadata.get("target_correctness", "")
         expected = ""
@@ -260,18 +270,27 @@ class LangGraphOrchestrator:
         }
         error_style = metadata.get("error_style") or default_error_styles.get(disability, "operation_confusion")
 
+        # Get structured prompts
+        prompts = self.prompts.get_student_attempt_prompt(
+            disability=disability,
+            problem=problem_text,
+            target_correctness=target,
+            expected_answer=expected,
+            error_style=error_style
+        )
+        # print(prompts)
+
         # When we want likely incorrect attempts, avoid cache reuse to prevent stale correct outputs
         use_cache = not (str(target).lower() == "likely_incorrect")
 
-        payload = await self.llm_client.invoke(
-            handler,
-            disability,
-            problem_text,
-            target,
-            expected,
-            error_style,
-            use_cache=use_cache,
+        # Use the LLM client with structured prompts
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompts["system"],
+            model="gpt-4o-mini",
+            temperature=1.0,
+            use_cache=use_cache
         )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Student attempt returned invalid payload")
         self._record_cache(state, "simulate_attempt")
@@ -288,8 +307,19 @@ class LangGraphOrchestrator:
         problem_text = problem.get("problem", "") if isinstance(problem, dict) else str(problem)
         attempt_json = self.llm_client.dumps(attempt)
 
-        handler = self.registry.get("analyze_thought")
-        payload = await self.llm_client.invoke(handler, disability, problem_text, attempt_json)
+        # Use structured prompt for thought analysis
+        prompt = self.prompts.get_thought_analysis_prompt(
+            disability=disability,
+            problem=problem_text,
+            attempt_json=attempt_json
+        )
+
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.3
+        )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Thought analysis returned invalid payload")
         self._record_cache(state, "analyze_attempt")
@@ -308,8 +338,20 @@ class LangGraphOrchestrator:
         attempt_json = self.llm_client.dumps(attempt)
         thought_json = self.llm_client.dumps(thought)
 
-        handler = self.registry.get("teaching_strategies")
-        payload = await self.llm_client.invoke(handler, disability, problem_text, attempt_json, thought_json)
+        # Use structured prompt for teaching strategies
+        prompt = self.prompts.get_teaching_strategies_prompt(
+            disability=disability,
+            problem=problem_text,
+            attempt_json=attempt_json,
+            thought_json=thought_json
+        )
+
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.4
+        )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Teaching strategies returned invalid payload")
         self._record_cache(state, "strategies")
@@ -331,8 +373,20 @@ class LangGraphOrchestrator:
         attempt_json = self.llm_client.dumps(attempt)
         thought_json = self.llm_client.dumps(thought)
 
-        handler = self.registry.get("tutor_session")
-        payload = await self.llm_client.invoke(handler, disability, problem_text, attempt_json, thought_json)
+        # Use structured prompt for tutor session
+        prompt = self.prompts.get_tutor_session_prompt(
+            disability=disability,
+            problem=problem_text,
+            attempt_json=attempt_json,
+            thought_json=thought_json
+        )
+
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.7
+        )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Tutor session returned invalid payload")
         self._record_cache(state, "tutor")
@@ -352,8 +406,20 @@ class LangGraphOrchestrator:
         expected_answer = problem.get("answer") if isinstance(problem, dict) else ""
         attempt_json = self.llm_client.dumps(attempt)
 
-        handler = self.registry.get("consistency_validation")
-        payload = await self.llm_client.invoke(handler, problem_text, disability, attempt_json, expected_answer or "")
+        # Use structured prompt for consistency validation
+        prompt = self.prompts.get_consistency_validation_prompt(
+            problem=problem_text,
+            disability=disability,
+            attempt_json=attempt_json,
+            expected_answer=expected_answer or ""
+        )
+
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.2
+        )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Consistency validation returned invalid payload")
         self._record_cache(state, "consistency")
@@ -368,8 +434,18 @@ class LangGraphOrchestrator:
 
         current_difficulty = state.get("difficulty", "medium")
 
-        handler = self.registry.get("adaptive_difficulty")
-        payload = await self.llm_client.invoke(handler, history, current_difficulty)
+        # Use structured prompt for adaptive difficulty
+        prompt = self.prompts.get_adaptive_difficulty_prompt(
+            history=history,
+            current_difficulty=current_difficulty
+        )
+
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.3
+        )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Adaptive difficulty returned invalid payload")
         self._record_cache(state, "adaptive")
@@ -387,8 +463,18 @@ class LangGraphOrchestrator:
         if not problem_text:
             return {}
 
-        handler = self.registry.get("identify_disability")
-        payload = await self.llm_client.invoke(handler, problem_text, student_response)
+        # Use structured prompt for disability identification
+        prompt = self.prompts.get_disability_identification_prompt(
+            problem=problem_text,
+            student_response=student_response
+        )
+
+        payload = await self.llm_client.invoke_with_prompt(
+            prompt=prompt,
+            model="gpt-4o-mini",
+            temperature=0.2
+        )
+        
         if not isinstance(payload, dict):
             raise HTTPException(status_code=500, detail="Disability analysis returned invalid payload")
         self._record_cache(state, "identify")

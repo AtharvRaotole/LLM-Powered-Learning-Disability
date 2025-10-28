@@ -8,6 +8,7 @@ import InteractiveWhiteboard from "./InteractiveWhiteboard";
 import DisabilityIdentifier from "./DisabilityIdentifier";
 // import AnalyticsDashboard from "./AnalyticsDashboard";
 import AITutorChat from "./AITutorChat";
+import LangGraphWorkflow from "./LangGraphWorkflow";
 export default function UserDisplay(){
     return(
         <div className={classes.displayContainer}>
@@ -31,6 +32,7 @@ export default function UserDisplay(){
                         <Route path="disability-identifier" element={<DisabilityIdentifier/>} />
                         {/* <Route path="analytics-dashboard" element={<AnalyticsDashboard/>} /> */}
                         <Route path="ai-tutor-chat" element={<AITutorChat/>} />
+                        <Route path="langgraph-workflow" element={<LangGraphWorkflow/>} />
                     </Routes>
                 </main>
             </div>
