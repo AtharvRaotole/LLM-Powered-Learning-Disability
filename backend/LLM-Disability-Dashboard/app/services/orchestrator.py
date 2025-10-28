@@ -278,13 +278,14 @@ class LangGraphOrchestrator:
             expected_answer=expected,
             error_style=error_style
         )
+        # print(prompts)
 
         # When we want likely incorrect attempts, avoid cache reuse to prevent stale correct outputs
         use_cache = not (str(target).lower() == "likely_incorrect")
 
         # Use the LLM client with structured prompts
         payload = await self.llm_client.invoke_with_prompt(
-            prompt=prompts["user"],
+            prompt=prompts["system"],
             model="gpt-4o-mini",
             temperature=1.0,
             use_cache=use_cache

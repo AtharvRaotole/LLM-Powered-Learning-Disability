@@ -16,21 +16,6 @@ export default function Thought(){
     const difficulty = sessionStorage.getItem('difficulty') || 'medium';
     
     useEffect(()=>{
-        async function fetchLegacyThought(currentDisability){
-            const response = await fetch("http://localhost:8001/api/v1/openai/generate_thought", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    disability: currentDisability,
-                    problem,
-                }),
-            });
-            if (!response.ok) {
-                throw new Error(`Legacy thought failed (${response.status})`);
-            }
-            return response.json();
-        }
-
         async function loadThought(currentDisability){
             setIsLoading(true);
             setError(null);
@@ -50,10 +35,9 @@ export default function Thought(){
                     thoughtData = analysis?.results?.thought_analysis;
                 }
 
-                if (!thoughtData) {
-                    thoughtData = await fetchLegacyThought(currentDisability);
-                }
-
+                // if (!thoughtData) {
+                //     thoughtData = await fetchLegacyThought(currentDisability);
+                // }
                 setResponse(thoughtData);
             } catch (err) {
                 console.error("Thought analysis error:", err);
@@ -94,16 +78,64 @@ export default function Thought(){
             
             {response && !isLoading && (
                 <div className={classes.analysis}>
-                    {response.thought && (
+                    {response.cognitive_patterns && (
                         <div className={classes.thoughtSection}>
-                            <div className={classes.sectionTitle}>🧠 Cognitive Analysis</div>
+                            <div className={classes.sectionTitle}>Cognitive Analysis</div>
                             <div className={classes.sectionContent}>
-                                {response.thought}
+                                {response.cognitive_patterns}
+                            </div>
+                        </div>
+                    )}
+                    {response.disability_impact && (
+                        <div className={classes.thoughtSection}>
+                            <div className={classes.sectionTitle}>Dsability Impact</div>
+                            <div className={classes.sectionContent}>
+                                {response.disability_impact}
+                            </div>
+                        </div>
+                    )}
+                    {response.emotional_indicators && (
+                        <div className={classes.thoughtSection}>
+                            <div className={classes.sectionTitle}>Emotional Indicators</div>
+                            <div className={classes.sectionContent}>
+                                {response.emotional_indicators}
+                            </div>
+                        </div>
+                    )}
+                    {response.error_analysis && (
+                        <div className={classes.thoughtSection}>
+                            <div className={classes.sectionTitle}>Error Analysis</div>
+                            <div className={classes.sectionContent}>
+                                {response.error_analysis}
+                            </div>
+                        </div>
+                    )}
+                    {response.strengths && (
+                        <div className={classes.thoughtSection}>
+                            <div className={classes.sectionTitle}>Strengths</div>
+                            <div className={classes.sectionContent}>
+                                {response.strengths}
+                            </div>
+                        </div>
+                    )}
+                    {response.growth_areas && (
+                        <div className={classes.thoughtSection}>
+                            <div className={classes.sectionTitle}>Growth areas</div>
+                            <div className={classes.sectionContent}>
+                                {response.growth_areas}
+                            </div>
+                        </div>
+                    )}
+                    {response.recommendations && (
+                        <div className={classes.thoughtSection}>
+                            <div className={classes.sectionTitle}>Recommendations</div>
+                            <div className={classes.sectionContent}>
+                                {response.recommendations}
                             </div>
                         </div>
                     )}
                     
-                    {response.mistake_analysis && (
+                    {/* {response.mista && (
                         <div className={classes.mistakeSection}>
                             <div className={classes.sectionTitle}>⚠️ Mistake Analysis</div>
                             <div className={classes.mistakeDetails}>
@@ -143,7 +175,7 @@ export default function Thought(){
                                 {response.learning_implications}
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
             )}
         </div>

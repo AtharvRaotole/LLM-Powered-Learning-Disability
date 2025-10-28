@@ -75,7 +75,7 @@ export default function AITutorChat() {
             });
             
             // Call the real AI chat API
-            const response = await fetch('http://localhost:8001/api/v1/openai/chat', {
+            const response = await fetch('http://localhost:8000/api/v1/openai/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ export default function AITutorChat() {
         
         try {
             // Call the real AI chat API for practice problem generation
-            const response = await fetch('http://localhost:8001/api/v1/openai/chat', {
+            const response = await fetch('http://localhost:8000/api/v1/openai/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

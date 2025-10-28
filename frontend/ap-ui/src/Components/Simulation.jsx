@@ -23,7 +23,6 @@ export default function Simulation() {
         try {
             setIsLoading(true);
             const disability = DisabilitiesEnum[id];
-            // This endpoint is not implemented; show placeholder content
             setSimulationData({
                 title: `Simulation for ${disability}`,
                 scenario: "This simulation feature is coming soon.",

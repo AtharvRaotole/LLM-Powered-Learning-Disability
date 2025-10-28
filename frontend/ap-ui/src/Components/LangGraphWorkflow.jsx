@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import classes from "./LangGraphWorkflow.module.css";
 
 export default function LangGraphWorkflow() {
@@ -46,7 +46,7 @@ export default function LangGraphWorkflow() {
                 throw new Error('Missing problem or student attempt for tutor session');
             }
 
-            const resp = await fetch('http://localhost:8001/api/v1/openai/generate_tutor', {
+            const resp = await fetch('http://localhost:8000/api/v1/openai/generate_tutor', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -79,7 +79,7 @@ export default function LangGraphWorkflow() {
         const existingProblem = lastGeneratedProblem;
 
         try {
-            const response = await fetch('http://localhost:8001/api/v2/langgraph/workflow', {
+            const response = await fetch('http://localhost:8000/api/v2/langgraph/workflow', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export default function LangGraphWorkflow() {
         setCurrentStep("Generating problem...");
 
         try {
-            const response = await fetch('http://localhost:8001/api/v2/langgraph/generate-problem', {
+            const response = await fetch('http://localhost:8000/api/v2/langgraph/generate-problem', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

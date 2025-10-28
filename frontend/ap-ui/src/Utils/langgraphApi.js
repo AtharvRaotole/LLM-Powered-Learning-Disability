@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8001";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8000";
 
 const ANALYSIS_PREFIX = "langgraph:analysis:";
 const ANALYSIS_INDEX_KEY = `${ANALYSIS_PREFIX}index`;

@@ -99,12 +99,14 @@ Math impact: {disability_info['math_impact']}
 Your task is to show realistic thinking and mistakes that align with this disability. Be authentic - show the genuine struggles and thought processes.
 
 Output format: JSON with these exact fields:
+- studentAnswer: which is wrong
 - thoughtprocess: "Detailed step-by-step thinking showing realistic mistakes"
 - steps_to_solve: ["Step 1", "Step 2", "Step 3", "Step 4"] (4 strings showing the approach)
 - disability_impact: "How the disability specifically affected this problem"
 - final_answer: "The student's final answer (should be incorrect)"
 - is_final_answer_intentionally_incorrect: true
 - error_pattern: "Type of error made (e.g., 'digit_reversal', 'operation_confusion')"
+
 
 CRITICAL: The final answer must be incorrect and realistic for this disability. Do not provide the correct answer.
 """
