@@ -95,6 +95,9 @@ export async function runLangGraphWorkflow(payload) {
 export async function runLangGraphFull(payload) {
     return postJson("/api/v2/langgraph/full-workflow", payload);
 }
+export async function runImprovementFlow(payload) {
+    return postJson("/api/v2/langgraph/improvement_analysis", payload);
+}
 
 function buildAnalysisKey(payload, workflowType) {
     const grade = payload.grade_level || "7th";
@@ -106,7 +109,7 @@ function buildAnalysisKey(payload, workflowType) {
     return `${ANALYSIS_PREFIX}${workflowType}|${grade}|${difficulty}|${disability}|${problemHash}|${attemptHash}|${responseHash}`;
 }
 
-function buildFullKey(payload) {
+export function buildFullKey(payload) {
     const grade = payload.grade_level || "7th";
     const difficulty = payload.difficulty || "medium";
     const disability = payload.disability || "No disability";
@@ -181,3 +184,25 @@ export async function getOrRunFullWorkflow(payload, options = {}) {
     storeCacheEntry(FULL_INDEX_KEY, key, response, `${FULL_PREFIX}last`);
     return response;
 }
+export async function getOrRunImprovementAnalysis(improvement_key,payload) {
+    const cached= sessionStorage.getItem(improvement_key);
+    if(cached){
+        try{
+            return JSON.parse(cached);
+        }
+        catch(err){
+            sessionStorage.removeItem(improvement_key);
+        }
+    }
+    const response=await runImprovementFlow(payload);
+    try{
+        sessionStorage.setItem(improvement_key,JSON.stringify(response));
+        return response;
+    }
+    catch(err){
+        console.warn("Unable to cache improvement analysis",err);
+        return response;
+    }
+}
+
+

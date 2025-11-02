@@ -55,6 +55,13 @@ export default function InternalNavigation(){
             icon: '🎯',
             description: 'Effective teaching methods',
             step: '4'
+        },
+        { 
+            key: 'improvement', 
+            label: 'Improvement', 
+            icon: '',
+            description: 'Improvement in student learning',
+            step: '5'
         }
     ];
     

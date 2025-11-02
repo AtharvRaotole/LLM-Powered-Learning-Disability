@@ -7,6 +7,8 @@ from fastapi import HTTPException
 
 from .langgraph_state import LearningSessionState
 from .orchestrator import LangGraphOrchestrator
+from .evaluation_orchestrator import improvement_graph
+import json
 
 orchestrator = LangGraphOrchestrator()
 
@@ -108,6 +110,11 @@ async def _run_graph_workflow(payload: Dict[str, Any]) -> Dict[str, Any]:
         current_step=current_step,
     )
 
+async def run_improvement_graph(payload):
+    graph=improvement_graph()
+    result=await graph.ainvoke({"past_attempts":payload})
+    response={"summary":result['student_summary'],'generated_problem':result['generated_problem'],'student_attempt':result['student_attempt'],'improvement_analysis':result['improvement_analysis'],'practice_problems':result['practice_problems']}
+    return response
 
 __all__ = [
     "run_learning_session",

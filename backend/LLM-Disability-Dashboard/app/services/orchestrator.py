@@ -26,10 +26,6 @@ class LangGraphOrchestrator:
         self.llm_client = llm_client or LLMClient()
         self.prompts = get_workflow_prompts()
         self._graph = self._build_graph()
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
     def build_initial_state(self, payload: Dict[str, Any]) -> LearningSessionState:
         """Normalize incoming payload into the shared LangGraph state."""
 
