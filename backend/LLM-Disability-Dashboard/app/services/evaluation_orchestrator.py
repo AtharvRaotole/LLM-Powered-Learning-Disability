@@ -47,6 +47,9 @@ async def generate_problem(state: StudentState) -> StudentState:
 
             Generate one math problem of the SAME type and difficulty
             to test if the student has improved.
+            dont include just the problem and output should be like this in json format
+            {{"problem": ""}}
+
             """
         )
         | llm
@@ -59,7 +62,8 @@ async def simulate_student(state: StudentState) -> StudentState:
     chain = (
         ChatPromptTemplate.from_template(
             """
-            Simulate how this same student would attempt the new problem.
+            Simulate how this same student would attempt the new problem. what are students thoughts while solving this new problem based on
+            old learnings
             Include reasoning steps and a final answer.
 
             Student Profile Summary:
@@ -67,6 +71,9 @@ async def simulate_student(state: StudentState) -> StudentState:
 
             Problem:
             {problem}
+
+            Output strictly in this JSON format (no code block):
+{{"thoughts": "<student's reasoning>", "steps": ["step1", "step2", ...], "final_answer": "<answer>"}}
             """
         )
         | llm
