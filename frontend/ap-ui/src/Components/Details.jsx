@@ -5,6 +5,7 @@ import Attempt from "./Attempt";
 import Strategies from "./Strategies";
 import Tutor from "./Tutor";
 import Thought from "./Thought";
+import Improvement from "./Improvement";
 
 export default function Details() {
   return (
@@ -15,6 +16,7 @@ export default function Details() {
         <Route path="thought" element={<Thought />} />
         <Route path="tutor" element={<Tutor />} />
         <Route path="strategies" element={<Strategies />} />
+        <Route path="improvement" element={<Improvement/>}/>
       </Route>
     </Routes>
   );

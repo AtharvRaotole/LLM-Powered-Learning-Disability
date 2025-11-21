@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from fastapi import Body
 
 from app.services.langgraph_service import (
     run_analysis_workflow,
@@ -12,6 +13,7 @@ from app.services.langgraph_service import (
     run_learning_session,
     run_problem_workflow,
     run_workflow,
+    run_improvement_graph
 )
 
 
@@ -113,6 +115,15 @@ async def run_langgraph_session(payload: LangGraphBaseRequest) -> Dict[str, Any]
 
     try:
         return await run_learning_session(payload.to_payload())
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover - runtime safety
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+@langgraph_router.post("/improvement_analysis")
+async def run_improvement_analysis(payload: dict = Body(...)):
+    try:
+        return await run_improvement_graph(payload)
     except HTTPException:
         raise
     except Exception as exc:  # pragma: no cover - runtime safety
