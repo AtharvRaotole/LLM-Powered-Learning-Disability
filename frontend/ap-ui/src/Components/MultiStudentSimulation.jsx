@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import classes from "./MultiStudentSimulation.module.css";
-import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+import { runBatchSimulate } from "../Utils/langgraphApi";
+import { getProblemObject } from "../Utils/workflowSession";
+import { getDifficultyLabel, getGradeLabel, readStoredDifficulty, readStoredGradeLevel } from "../Utils/gradeConfig";
 
 export default function MultiStudentSimulation() {
     const [problem, setProblem] = useState('');
@@ -9,8 +11,8 @@ export default function MultiStudentSimulation() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [comparisonData, setComparisonData] = useState(null);
-    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
-    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
+    const gradeLevel = readStoredGradeLevel();
+    const difficulty = readStoredDifficulty();
 
     const disabilities = [
         { id: 0, name: "No disability", color: "#10b981" },
@@ -45,44 +47,33 @@ export default function MultiStudentSimulation() {
         setComparisonData(null);
 
         try {
-            const simulationPromises = disabilities.map(async (disability) => {
-                try {
-                    // Run student attempt
-                    const analysis = await getOrRunFullWorkflow({
-                        grade_level: gradeLevel,
-                        difficulty,
-                        disability: disability.name,
-                        problem,
-                    });
-
-                    const attemptData = analysis?.results?.student_simulation;
-                    const consistencyData = analysis?.results?.consistency_validation || analysis?.results?.consistency_report;
-
-                    if (!attemptData) {
-                        throw new Error(`Missing student simulation for ${disability.name}`);
-                    }
-
-                    return {
-                        disability,
-                        attempt: attemptData,
-                        consistency: consistencyData,
-                        timestamp: new Date().toISOString(),
-                        cache: analysis?.metadata?.cache_status || {},
-                    };
-                } catch (err) {
-                    console.error(`Error simulating ${disability.name}:`, err);
-                    return {
-                        disability,
-                        error: err.message,
-                        timestamp: new Date().toISOString()
-                    };
-                }
+            const problemObj = getProblemObject() || { problem, answer: expectedAnswer };
+            const batch = await runBatchSimulate({
+                grade_level: gradeLevel,
+                difficulty,
+                problem: problemObj,
+                disabilities: disabilities.map((d) => d.name),
             });
 
-            const results = await Promise.all(simulationPromises);
-            setSimulations(results);
+            const results = disabilities.map((disability) => {
+                const entry = batch.results?.[disability.name];
+                if (!entry) {
+                    const errMsg = batch.errors?.[disability.name] || batch.errors?.unknown || "Simulation failed";
+                    return {
+                        disability,
+                        error: errMsg,
+                        timestamp: new Date().toISOString(),
+                    };
+                }
+                return {
+                    disability,
+                    attempt: entry.student_simulation,
+                    consistency: entry.consistency_validation,
+                    timestamp: new Date().toISOString(),
+                };
+            });
 
-            // Generate comparison data
+            setSimulations(results);
             generateComparisonData(results);
 
         } catch (err) {

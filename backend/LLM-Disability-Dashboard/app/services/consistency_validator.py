@@ -1,7 +1,19 @@
 import re
 import json
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Any, Optional
 from fastapi import HTTPException, Response
+
+from .disability_registry import normalize_disability
+
+# Weighted scoring from paper: step_answer, disability, math, errors, completeness
+CHECK_WEIGHTS = {
+    "step_answer_consistency": 0.25,
+    "disability_behavior": 0.25,
+    "mathematical_reasoning": 0.15,
+    "error_patterns": 0.20,
+    "completeness": 0.15,
+}
+CONSISTENCY_THRESHOLD = 0.7
 
 def validate_response_consistency(problem: str, disability: str, student_attempt: Dict, expected_answer: str) -> Dict[str, Any]:
     """
@@ -17,6 +29,8 @@ def validate_response_consistency(problem: str, disability: str, student_attempt
         Dictionary containing validation results and scores
     """
     
+    disability = normalize_disability(disability)
+
     validation_results = {
         "overall_consistency_score": 0.0,
         "checks": {},
@@ -47,9 +61,17 @@ def validate_response_consistency(problem: str, disability: str, student_attempt
     completeness = validate_response_completeness(student_attempt)
     validation_results["checks"]["completeness"] = completeness
     
-    # Calculate overall consistency score
-    scores = [check["score"] for check in validation_results["checks"].values()]
-    validation_results["overall_consistency_score"] = sum(scores) / len(scores) if scores else 0.0
+    # Calculate weighted overall consistency score
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for check_name, weight in CHECK_WEIGHTS.items():
+        check = validation_results["checks"].get(check_name)
+        if check is not None:
+            weighted_sum += check["score"] * weight
+            weight_total += weight
+    validation_results["overall_consistency_score"] = (
+        weighted_sum / weight_total if weight_total else 0.0
+    )
     
     # Generate recommendations
     validation_results["recommendations"] = generate_recommendations(validation_results["checks"])

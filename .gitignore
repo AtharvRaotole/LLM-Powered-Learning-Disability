@@ -3,5 +3,7 @@
 __pycache__/
 *.pyc
 backend/LLM-Disability-Dashboard/venv/
+backend/LLM-Disability-Dashboard/data/cache.db
+backend/LLM-Disability-Dashboard/data/checkpoints.db
 node_modules/
 

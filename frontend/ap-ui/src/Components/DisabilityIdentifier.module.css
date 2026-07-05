@@ -1,9 +1,11 @@
 .container {
     padding: 20px;
-    background: white;
+    background: var(--bg-surface);
     border-radius: 12px;
     margin: 20px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .header {
@@ -29,13 +31,166 @@
 }
 
 .subtitle {
-    color: #64748b;
+    color: var(--text-page-muted, var(--text-muted));
     font-size: 1rem;
     margin: 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.settingsSection {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.settingsRow {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.settingGroup {
+    min-width: 160px;
+}
+
+.select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #374151;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.progressBar {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #667eea;
+    background: #eef2ff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin: 0 auto 20px;
+    width: fit-content;
+    display: block;
+    width: max-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.followUpBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    color: #1e40af;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.followUpIcon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.historySection {
+    margin-bottom: 20px;
+}
+
+.historyToggle {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.historyToggle:hover {
+    text-decoration: underline;
+}
+
+.historyList {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.historyItem {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+}
+
+.historyQuestion {
+    color: #374151;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.historyAnswer {
+    color: var(--text-muted);
+    line-height: 1.4;
 }
 
 .inputSection {
     margin-bottom: 30px;
+}
+
+.questionCard {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    border: 2px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.questionLabel {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.questionText {
+    font-size: 1.1rem;
+    color: #1e293b;
+    line-height: 1.6;
+    margin: 0 0 12px 0;
+}
+
+.focusTag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6366f1;
+    background: var(--bg-surface);
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 3px 10px;
 }
 
 .inputGroup {
@@ -58,10 +213,11 @@
     font-size: 1rem;
     line-height: 1.5;
     color: #374151;
-    background: white;
+    background: var(--bg-surface);
     transition: all 0.2s ease;
     resize: vertical;
     min-height: 100px;
+    box-sizing: border-box;
 }
 
 .textarea:focus {
@@ -72,6 +228,13 @@
 
 .textarea::placeholder {
     color: #9ca3af;
+}
+
+.actionRow {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .analyzeBtn {
@@ -87,7 +250,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 auto;
 }
 
 .analyzeBtn:hover:not(:disabled) {
@@ -101,12 +263,34 @@
     transform: none;
 }
 
+.secondaryBtn {
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    border: 2px solid #e2e8f0;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    color: #374151;
+}
+
+.secondaryBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .loading {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px;
-    color: #64748b;
+    color: var(--text-muted);
     font-style: italic;
     background: #f8fafc;
     border-radius: 12px;
@@ -153,69 +337,54 @@
     border: 1px solid #e2e8f0;
 }
 
-.resultsTitle {
+.verdictHero {
+    text-align: center;
+    padding: 28px 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 2px solid #e2e8f0;
+    background: var(--bg-surface);
+}
+
+.verdictHero.high {
+    border-color: #fca5a5;
+    background: linear-gradient(135deg, #fff 0%, #fef2f2 100%);
+}
+
+.verdictHero.medium {
+    border-color: #fcd34d;
+    background: linear-gradient(135deg, #fff 0%, #fffbeb 100%);
+}
+
+.verdictHero.low {
+    border-color: #86efac;
+    background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
+}
+
+.verdictLabel {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.verdictName {
     font-size: 1.5rem;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 24px;
-    text-align: center;
-}
-
-.section {
-    margin-bottom: 24px;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid #e2e8f0;
-}
-
-.sectionTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.disabilityCard {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-    transition: all 0.2s ease;
-}
-
-.disabilityCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.disabilityCard:last-child {
-    margin-bottom: 0;
-}
-
-.disabilityHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 12px;
-}
-
-.disabilityName {
-    font-weight: 700;
-    color: #1e293b;
-    font-size: 1.1rem;
+    line-height: 1.3;
 }
 
 .confidence {
-    padding: 4px 8px;
+    padding: 4px 12px;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;
+    display: inline-block;
 }
 
 .high {
@@ -233,34 +402,28 @@
     color: #16a34a;
 }
 
-.indicators {
-    margin-bottom: 12px;
+.section {
+    margin-bottom: 24px;
+    background: var(--bg-surface);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
 }
 
-.indicators strong {
+.sectionTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reasoningText {
     color: #374151;
-    font-size: 0.9rem;
-}
-
-.indicators ul {
-    margin: 8px 0 0 0;
-    padding-left: 20px;
-}
-
-.indicators li {
-    color: #6b7280;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-}
-
-.explanation {
-    color: #6b7280;
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.explanation strong {
-    color: #374151;
+    line-height: 1.6;
+    margin: 0;
 }
 
 .patternList, .strengthsList, .recommendationsList {
@@ -301,21 +464,37 @@
 
 @media (max-width: 768px) {
     .container {
-        margin: 10px;
-        padding: 16px;
+        margin: 0;
+        padding: var(--space-3);
     }
-    
+
     .title {
         font-size: 1.5rem;
     }
-    
-    .disabilityHeader {
+
+    .settingsRow {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        align-items: stretch;
     }
-    
+
+    .settingGroup {
+        min-width: unset;
+    }
+
+    .verdictName {
+        font-size: 1.25rem;
+    }
+
     .section {
         padding: 16px;
+    }
+
+    .actionRow {
+        flex-direction: column;
+    }
+
+    .analyzeBtn, .secondaryBtn {
+        width: 100%;
+        justify-content: center;
     }
 }

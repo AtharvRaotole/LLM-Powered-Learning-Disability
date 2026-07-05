@@ -1,19 +1,21 @@
 import classes from './ProblemContext.module.css';
+import { getDifficultyLabel, getGradeLabel, readStoredDifficulty, readStoredGradeLevel } from '../Utils/gradeConfig';
+import { getProblemObject } from '../Utils/workflowSession';
 
 export default function ProblemContext() {
-    const problem = sessionStorage.getItem('problem');
-    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
-    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
-    const answer=sessionStorage.getItem('answer')||'NA';
-    
+    const problemObj = getProblemObject();
+    const problem = problemObj?.problem;
+    const gradeLevel = getGradeLabel(readStoredGradeLevel());
+    const difficulty = getDifficultyLabel(readStoredDifficulty());
+    const answer = problemObj?.answer || 'NA';
+
     if (!problem) {
         return null;
     }
-    
+
     return (
         <div className={classes.problemContextContainer}>
             <div className={classes.problemHeader}>
-                <span className={classes.problemIcon}>📝</span>
                 <span className={classes.problemTitle}>Current Problem</span>
             </div>
             <div className={classes.problemContent}>
@@ -29,9 +31,6 @@ export default function ProblemContext() {
                 <span className={classes.metaBadge}>
                     <span className={classes.metaLabel}>Correct answer:</span> {answer}
                 </span>
-                {/* <span className={classes.metaBadge}>
-                    <span className={classes.metaLabel}>Student's answer:</span> {difficulty}
-                </span> */}
             </div>
         </div>
     );

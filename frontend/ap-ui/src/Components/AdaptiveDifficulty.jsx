@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import classes from "./AdaptiveDifficulty.module.css";
 import SessionManager from "../Utils/SessionManager";
 import { runLangGraphWorkflow } from "../Utils/langgraphApi";
+import { readStoredDifficulty, readStoredGradeLevel } from "../Utils/gradeConfig";
 
 export default function AdaptiveDifficulty() {
     const [studentHistory, setStudentHistory] = useState([]);
-    const [currentDifficulty, setCurrentDifficulty] = useState("medium");
+    const [currentDifficulty, setCurrentDifficulty] = useState(() => readStoredDifficulty());
     const [recommendation, setRecommendation] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -44,7 +45,7 @@ export default function AdaptiveDifficulty() {
     async function getAdaptiveRecommendation() {
         setIsLoading(true);
         try {
-            const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
+            const gradeLevel = readStoredGradeLevel();
             const payload = {
                 grade_level: gradeLevel,
                 difficulty: currentDifficulty,

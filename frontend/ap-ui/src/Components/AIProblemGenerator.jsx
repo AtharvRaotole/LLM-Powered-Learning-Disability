@@ -1,12 +1,23 @@
 import { useState } from "react";
 import classes from "./AIProblemGenerator.module.css";
+import { generateLangGraphProblem } from "../Utils/langgraphApi";
+import { persistProblem } from "../Utils/workflowSession";
+import GradeDifficultyControls from "./GradeDifficultyControls";
+import {
+    DEFAULT_DIFFICULTY,
+    DEFAULT_GRADE_LEVEL,
+    getDifficultyLabel,
+    getGradeLabel,
+    readStoredDifficulty,
+    readStoredGradeLevel,
+} from "../Utils/gradeConfig";
 
 export default function AIProblemGenerator() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedProblems, setGeneratedProblems] = useState([]);
-    const [selectedDifficulty, setSelectedDifficulty] = useState('medium');
+    const [selectedDifficulty, setSelectedDifficulty] = useState(() => readStoredDifficulty() || DEFAULT_DIFFICULTY);
+    const [gradeLevel, setGradeLevel] = useState(() => readStoredGradeLevel() || DEFAULT_GRADE_LEVEL);
     const [selectedTopic, setSelectedTopic] = useState('algebra');
-    const [studentLevel, setStudentLevel] = useState('intermediate');
     const [customPrompt, setCustomPrompt] = useState('');
     const [aiInsights, setAiInsights] = useState(null);
     // const [problemHistory, setProblemHistory] = useState([]); // TODO: Implement problem history tracking
@@ -20,45 +31,29 @@ export default function AIProblemGenerator() {
         { id: 'word-problems', name: 'Word Problems', icon: '📝' }
     ];
 
-    const difficulties = [
-        { id: 'beginner', name: 'Beginner', color: '#10B981' },
-        { id: 'intermediate', name: 'Intermediate', color: '#F59E0B' },
-        { id: 'advanced', name: 'Advanced', color: '#EF4444' },
-        { id: 'expert', name: 'Expert', color: '#8B5CF6' }
-    ];
-
     const generateAIProblem = async () => {
         setIsGenerating(true);
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/openai/generate_problem?grade_level=${studentLevel}&difficulty=${selectedDifficulty}&topic=${selectedTopic}&custom_prompt=${encodeURIComponent(customPrompt)}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+            const data = await generateLangGraphProblem({
+                grade_level: gradeLevel,
+                difficulty: selectedDifficulty,
             });
+            persistProblem(data);
+            const newProblem = {
+                id: Date.now(),
+                problem: data.problem,
+                solution: data.solution,
+                difficulty: selectedDifficulty,
+                gradeLevel,
+                topic: selectedTopic,
+                timestamp: new Date().toISOString(),
+                aiInsights: generateAIInsights(data.problem, selectedDifficulty),
+                customPrompt: customPrompt
+            };
 
-            if (response.ok) {
-                const data = await response.json();
-                const newProblem = {
-                    id: Date.now(),
-                    problem: data.problem,
-                    solution: data.solution,
-                    difficulty: selectedDifficulty,
-                    topic: selectedTopic,
-                    timestamp: new Date().toISOString(),
-                    aiInsights: generateAIInsights(data.problem, selectedDifficulty),
-                    studentLevel: studentLevel,
-                    customPrompt: customPrompt
-                };
-                
-                setGeneratedProblems(prev => [newProblem, ...prev]);
-                setAiInsights(newProblem.aiInsights);
-                
-                // Clear custom prompt after successful generation
-                setCustomPrompt('');
-            } else {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            setGeneratedProblems(prev => [newProblem, ...prev]);
+            setAiInsights(newProblem.aiInsights);
+            setCustomPrompt('');
         } catch (error) {
             console.error('Error generating problem:', error);
             // Show user-friendly error message
@@ -71,7 +66,7 @@ export default function AIProblemGenerator() {
     const generateAIInsights = (problem, difficulty) => {
         const insights = {
             estimatedTime: Math.floor(Math.random() * 15) + 5,
-            cognitiveLoad: difficulty === 'beginner' ? 'Low' : difficulty === 'intermediate' ? 'Medium' : 'High',
+            cognitiveLoad: difficulty === 'easy' ? 'Low' : difficulty === 'medium' ? 'Medium' : 'High',
             skillsRequired: getSkillsForTopic(selectedTopic),
             commonMistakes: getCommonMistakes(selectedTopic),
             learningObjectives: getLearningObjectives(selectedTopic),
@@ -119,10 +114,9 @@ export default function AIProblemGenerator() {
 
     const getDifficultyScore = (difficulty) => {
         const scores = {
-            'beginner': 25,
-            'intermediate': 50,
-            'advanced': 75,
-            'expert': 95
+            easy: 25,
+            medium: 50,
+            hard: 85,
         };
         return scores[difficulty] || 50;
     };
@@ -220,33 +214,13 @@ export default function AIProblemGenerator() {
                 </div>
 
                 <div className={classes.controlGroup}>
-                    <label>Difficulty Level</label>
-                    <div className={classes.difficultyGrid}>
-                        {difficulties.map(diff => (
-                            <button
-                                key={diff.id}
-                                className={`${classes.difficultyBtn} ${selectedDifficulty === diff.id ? classes.active : ''}`}
-                                onClick={() => setSelectedDifficulty(diff.id)}
-                                style={{ '--color': diff.color }}
-                            >
-                                {diff.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className={classes.controlGroup}>
-                    <label>Student Level</label>
-                    <select 
-                        value={studentLevel} 
-                        onChange={(e) => setStudentLevel(e.target.value)}
-                        className={classes.select}
-                    >
-                        <option value="elementary">Elementary (K-5)</option>
-                        <option value="middle">Middle School (6-8)</option>
-                        <option value="high">High School (9-12)</option>
-                        <option value="college">College Level</option>
-                    </select>
+                    <GradeDifficultyControls
+                        gradeLevel={gradeLevel}
+                        difficulty={selectedDifficulty}
+                        onGradeChange={setGradeLevel}
+                        onDifficultyChange={setSelectedDifficulty}
+                        compact
+                    />
                 </div>
 
                 <div className={classes.controlGroup}>
@@ -317,7 +291,8 @@ export default function AIProblemGenerator() {
                         <div className={classes.problemHeader}>
                             <div className={classes.problemMeta}>
                                 <span className={classes.topic}>{problem.topic}</span>
-                                <span className={classes.difficulty}>{problem.difficulty}</span>
+                                <span className={classes.difficulty}>{getDifficultyLabel(problem.difficulty)}</span>
+                                <span className={classes.difficulty}>{getGradeLabel(problem.gradeLevel)}</span>
                                 <span className={classes.timestamp}>
                                     {new Date(problem.timestamp).toLocaleTimeString()}
                                 </span>

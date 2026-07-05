@@ -54,41 +54,13 @@ def clean_json_response(content: str):
 Stateless LLM helpers. Each function receives needed context via parameters.
 """
 
-async def Problem(grade_level="7th", difficulty="medium"):
-    prompt = f"""
-You are an expert mathematics educator specializing in creating age-appropriate word problems for students with learning disabilities. You understand the cognitive development stages and can create problems that are challenging yet accessible.
+async def Problem(grade_level="5th", difficulty="medium"):
+    from app.services.prompts import WorkflowPrompts
+    from app.services.grade_registry import normalize_difficulty, normalize_grade_level
 
-Generate a well-structured mathematics word problem suitable for a {grade_level} grade student with {difficulty} difficulty level. The problem should:
-
-1. Be age-appropriate and engaging
-2. Use clear, simple language
-3. Include real-world context that students can relate to
-4. Have a single, clear solution path
-5. Be solvable in 3-5 steps
-6. Include numbers that are manageable for the grade level
-7. Match the specified difficulty level
-
-For 2nd grade: Focus on basic addition/subtraction, simple counting, basic shapes
-For 5th grade: Include fractions, decimals, basic geometry, multi-step problems
-For 7th grade: Include algebra basics, ratios, percentages, more complex word problems
-
-Difficulty levels:
-- Easy: Simple operations, small numbers, 2-3 steps
-- Medium: Moderate complexity, medium numbers, 3-4 steps
-- Hard: Complex reasoning, larger numbers, 4-5 steps
-
-CRITICAL: The "answer" field must contain the EXACT final numerical answer that matches the solution steps. Double-check that your answer is consistent with your solution approach.
-
-Format your output as JSON in the following structure:
-{{
-  "problem": "<Word problem>",
-  "answer": "<Final numerical answer - must match solution>",
-  "solution": "<Detailed step-by-step approach to solve the problem>",
-  "grade_level": "{grade_level}",
-  "concepts": ["<list of math concepts covered>"],
-  "difficulty": "{difficulty}"
-}}
-"""
+    grade_level = normalize_grade_level(grade_level)
+    difficulty = normalize_difficulty(difficulty)
+    prompt = WorkflowPrompts.get_problem_generation_prompt(grade_level, difficulty)
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -442,15 +414,20 @@ Create a realistic 10-12 exchange tutoring conversation that implements effectiv
 
 Make the student's responses realistic - they may be hesitant, confused, or make mistakes initially, but should show progress with guidance.
 
+**Emotion and tone labels (required on every turn):**
+- Every Tutor turn MUST include a "tone" field: a short lowercase label from encouraging, empathetic, patient, celebratory, reassuring, curious, supportive
+- Every Student turn MUST include an "emotion" field: a short lowercase label from frustrated, confused, anxious, discouraged, curious, hesitant, hopeful, relieved, proud, engaged
+- Labels must match what the dialogue conveys (e.g. student says "I'm feeling frustrated" → emotion: "frustrated"; tutor responds warmly → tone: "encouraging")
+
 Also, provide a concise test question to check the student's understanding now. Make it one step, clearly phrased, and USE THE SAME REAL-WORLD CONTEXT as the original problem. Do not introduce a new scenario. Prefer keeping the same numbers; if you change numbers, vary only slightly (≤ 20%) while preserving the same structure and concept. Provide the correct expected answer.
 
 Format as JSON:
 {{
 "conversation": [
-    {{"speaker": "Tutor", "text": "<tutor's message>", "strategy": "<teaching strategy being used>"}},
-    {{"speaker": "Student", "text": "<student's response>", "emotion": "<student's emotional state>"}},
-    {{"speaker": "Tutor", "text": "<tutor's message>", "strategy": "<teaching strategy being used>"}},
-    {{"speaker": "Student", "text": "<student's response>", "emotion": "<student's emotional state>"}}
+    {{"speaker": "Tutor", "text": "<tutor's message>", "tone": "encouraging", "strategy": "<teaching strategy being used>"}},
+    {{"speaker": "Student", "text": "<student's response>", "emotion": "frustrated"}},
+    {{"speaker": "Tutor", "text": "<tutor's message>", "tone": "empathetic", "strategy": "<teaching strategy being used>"}},
+    {{"speaker": "Student", "text": "<student's response>", "emotion": "hopeful"}}
   ],
   "learning_objectives": [
     "<What the student should learn from this session>",
@@ -546,8 +523,16 @@ Analyze the student's response and provide insights in this JSON format:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while analyzing student response: {str(e)}")
 
-async def chat_with_ai(user_message, chat_mode="tutor", personality="helpful", conversation_history=[]):
+async def chat_with_ai(
+    user_message,
+    chat_mode="tutor",
+    personality="helpful",
+    conversation_history=None,
+    problem_context=None,
+):
     """Chat with AI tutor based on mode and personality"""
+    if conversation_history is None:
+        conversation_history = []
     try:
         # Define personality prompts
         personality_prompts = {
@@ -565,39 +550,36 @@ async def chat_with_ai(user_message, chat_mode="tutor", personality="helpful", c
             "debug": "Help identify and fix errors in mathematical solutions and reasoning. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it."
         }
         
-        # Build conversation context
-        conversation_context = ""
-        if conversation_history:
-            conversation_context = "\n".join([
-                f"{msg.get('sender', 'user')}: {msg.get('content', '')}" 
-                for msg in conversation_history[-10:]  # Last 10 messages for context
-            ])
-        
-        # Create the prompt
-        prompt = f"""
-{personality_prompts.get(personality, personality_prompts["helpful"])}
+        system_prompt = f"""{personality_prompts.get(personality, personality_prompts["helpful"])}
 
 {mode_instructions.get(chat_mode, mode_instructions["tutor"])}
 
-Previous conversation:
-{conversation_context}
-
-Current user message: {user_message}
-
 IMPORTANT: When the user asks for a "question", "problem", or "question to solve", provide ONLY the problem statement without the solution. Only provide the solution if they specifically ask you to "solve it", "show the solution", or "explain how to solve it".
 
-Respond as a helpful AI tutor. Be conversational, educational, and engaging. If the user asks for a math problem, provide one WITHOUT the solution unless they specifically ask for the solution. If they ask for explanations, break it down clearly. Keep responses concise but informative.
-"""
-        
-        # Call OpenAI API
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.7
-        )
+Respond as a helpful AI tutor. Be conversational, educational, and engaging. If the user asks for a math problem, provide one WITHOUT the solution unless they specifically ask for the solution. If they ask for explanations, break it down clearly. Keep responses concise but informative."""
+
+        if isinstance(problem_context, dict) and problem_context.get("problem"):
+            system_prompt += (
+                f"\n\nThe student is currently working on this problem: "
+                f"{problem_context['problem']}"
+            )
+            if problem_context.get("answer"):
+                system_prompt += (
+                    "\nDo not reveal the correct answer unless the student explicitly asks "
+                    "for the solution or final answer."
+                )
+
+        messages = [{"role": "system", "content": system_prompt}]
+        for msg in conversation_history[-10:]:
+            role = "assistant" if msg.get("sender") == "ai" else "user"
+            content = msg.get("content", "")
+            if content:
+                messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": user_message})
+
+        from app.services.nvidia_chat_client import chat_completion
+
+        response = chat_completion(messages, max_tokens=1024, temperature=0.6)
         
         content = response.choices[0].message.content.strip()
         

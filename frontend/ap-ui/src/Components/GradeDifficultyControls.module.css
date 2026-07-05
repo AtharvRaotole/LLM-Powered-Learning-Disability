@@ -1,0 +1,120 @@
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.compact {
+    gap: var(--space-3);
+}
+
+.controlRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.label {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.selectWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    padding: var(--space-3) var(--space-8) var(--space-3) var(--space-4);
+    background: var(--ios-gray-6);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: 400;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.select:hover {
+    background: var(--ios-gray-5);
+}
+
+.select:focus {
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
+}
+
+.chevron {
+    position: absolute;
+    right: var(--space-4);
+    font-size: 1.25rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    pointer-events: none;
+    transform: rotate(90deg);
+    line-height: 1;
+}
+
+.segmented {
+    display: flex;
+    background: var(--ios-gray-5);
+    border-radius: var(--radius-md);
+    padding: 2px;
+    gap: 2px;
+}
+
+.segment {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border-radius: calc(var(--radius-md) - 2px);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    background: transparent;
+    transition: var(--transition-fast);
+    min-height: 36px;
+}
+
+.segment:hover:not(.segmentActive) {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.segmentActive {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 640px) {
+    .controls {
+        flex-direction: row;
+        align-items: flex-end;
+        gap: var(--space-6);
+        flex-wrap: wrap;
+    }
+
+    .controlRow {
+        flex: 1;
+        min-width: min(200px, 100%);
+    }
+}
+
+@media (max-width: 480px) {
+    .segmented {
+        flex-wrap: wrap;
+    }
+
+    .segment {
+        flex: 1 1 calc(50% - 2px);
+        min-height: 40px;
+    }
+}

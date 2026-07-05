@@ -1,54 +1,524 @@
-.section {
-    margin-bottom: var(--space-6);
-    padding: var(--space-6);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: var(--radius-xl);
-    border-left: 5px solid var(--color-primary-500);
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    transition: var(--transition-base);
-    position: relative;
+/* ── Progress Summary ── */
+.summaryHero {
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(52, 199, 89, 0.06) 100%);
+    border: 0.5px solid rgba(0, 122, 255, 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-6);
 }
 
-.section:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-    border-left-color: var(--color-primary-600);
+.summaryHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
 }
 
-.sectionTitle {
+.summaryEmoji {
+    font-size: 1.75rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.summaryTitle {
+    font-family: var(--font-family-heading);
     font-size: var(--font-size-lg);
     font-weight: 700;
-    color: var(--color-secondary-900);
-    margin-bottom: var(--space-3);
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.summarySubtitle {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.highlightRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.highlightChip {
+    display: inline-block;
+    background: var(--bg-surface);
+    border: 0.5px solid var(--ios-separator);
+    border-radius: var(--radius-full);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    max-width: 100%;
+}
+
+.summaryBody {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+}
+
+/* ── Section headers ── */
+.sectionTitle {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.sectionCount {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* ── Before / After comparison ── */
+.comparisonSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.comparisonHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.comparisonHint {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.comparison {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-3);
+    align-items: stretch;
+}
+
+.comparisonArrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--ios-blue);
+    font-weight: 700;
+    opacity: 0.6;
+    padding: 0 var(--space-1);
+}
+
+.panel {
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    border: 0.5px solid var(--ios-separator);
+}
+
+.panel.before {
+    background: rgba(255, 59, 48, 0.04);
+    border-color: rgba(255, 59, 48, 0.2);
+    border-top: 3px solid var(--ios-red);
+}
+
+.panel.after {
+    background: rgba(52, 199, 89, 0.05);
+    border-color: rgba(52, 199, 89, 0.25);
+    border-top: 3px solid var(--ios-green);
+}
+
+.panelHeader {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+}
+
+.panelBadge {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.before .panelBadge {
+    background: rgba(255, 59, 48, 0.12);
+    color: var(--ios-red);
+}
+
+.after .panelBadge {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--ios-green);
+}
+
+.panelTitle {
     font-family: var(--font-family-heading);
-    letter-spacing: -0.025em;
-    cursor: pointer;
-    transition: var(--transition-base);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
 }
 
-.sectionTitle:hover {
-    color: var(--color-primary-600);
+.blockLabel {
+    display: block;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: var(--space-2);
 }
 
-.sectionTitle::before {
-    content: '';
-    width: 12px;
-    height: 12px;
-    background: var(--gradient-primary);
+.problemText {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    font-weight: 500;
+}
+
+.answerBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--ios-separator);
+}
+
+.answerValue {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.before .answerValue { color: var(--ios-red); }
+.after .answerValue { color: var(--ios-green); }
+
+.thoughtBlock {
+    padding: var(--space-4);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--ios-separator);
+    position: relative;
+}
+
+.before .thoughtBlock {
+    border-left: 3px solid rgba(255, 59, 48, 0.4);
+}
+
+.after .thoughtBlock {
+    border-left: 3px solid rgba(52, 199, 89, 0.5);
+}
+
+.thoughtText {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    font-style: italic;
+}
+
+.stepsBlock {
+    margin-top: auto;
+}
+
+.stepList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.stepList li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+}
+
+.stepNum {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    box-shadow: var(--shadow-sm);
-    animation: pulse 2s infinite;
+    background: var(--ios-gray-6);
+    border: 1.5px solid var(--ios-gray-4);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.sectionContent {
-    color: var(--color-secondary-700);
-    line-height: 1.7;
+.after .stepNum {
+    background: rgba(52, 199, 89, 0.1);
+    border-color: var(--ios-green);
+    color: var(--ios-green);
+}
+
+/* ── What Improved ── */
+.winsSection {
+    background: var(--ios-gray-6);
+    border: 0.5px solid var(--ios-separator);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-6);
+}
+
+.winsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+}
+
+.winCard {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    border: 0.5px solid var(--ios-separator);
+}
+
+.winCard p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+.winIcon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.winCard.win .winIcon {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--ios-green);
+}
+
+.winCard.watch .winIcon {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--ios-orange);
+}
+
+.winCard.neutral .winIcon {
+    background: rgba(0, 122, 255, 0.12);
+    color: var(--ios-blue);
+}
+
+.winCard.win { border-left: 3px solid var(--ios-green); }
+.winCard.watch { border-left: 3px solid var(--ios-orange); }
+.winCard.neutral { border-left: 3px solid var(--ios-blue); }
+
+/* ── Practice Next ── */
+.practiceSection {
+    background: var(--ios-gray-6);
+    border: 0.5px solid var(--ios-separator);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-6);
+}
+
+.practiceIntro {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.practiceGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-4);
+}
+
+.practiceCard {
+    background: var(--bg-surface);
+    border: 0.5px solid var(--ios-separator);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.practiceCard:hover {
+    border-color: rgba(0, 122, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.practiceCardHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.practiceNumber {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gradient-info);
+    color: #fff;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.practiceTitle {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.practiceQuestion {
+    margin: 0;
     font-size: var(--font-size-base);
-    font-family: var(--font-family-primary);
-    font-weight: 400;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.6;
+    flex: 1;
+}
+
+.hintArea {
+    margin-top: auto;
+    padding-top: var(--space-2);
+    border-top: 0.5px solid var(--ios-separator);
+}
+
+.hintToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--ios-blue);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.hintToggle:hover {
+    text-decoration: underline;
+}
+
+.hintIcon {
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.hintText {
+    margin: var(--space-2) 0 0;
+    padding: var(--space-3) var(--space-4);
+    background: rgba(0, 122, 255, 0.06);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.55;
+    border-left: 3px solid var(--ios-blue);
+}
+
+/* ── Drill-down ── */
+.drillDetails {
+    background: var(--ios-gray-6);
+    border: 0.5px solid var(--ios-separator);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+}
+
+.drillSummary {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--ios-blue);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.drillSummary::-webkit-details-marker {
+    display: none;
+}
+
+.drillSummary::before {
+    content: '▸ ';
+    font-weight: 700;
+}
+
+.drillDetails[open] .drillSummary::before {
+    content: '▾ ';
+}
+
+.drillDetails[open] .panel {
+    margin-top: var(--space-4);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .comparison {
+        grid-template-columns: 1fr;
+    }
+
+    .comparisonArrow {
+        transform: rotate(90deg);
+        padding: var(--space-2) 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .winsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .practiceGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .comparisonHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-1);
+    }
 }

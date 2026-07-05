@@ -1,0 +1,93 @@
+.pillNav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 2px;
+    background: var(--ios-gray-5);
+    padding: 4px;
+    border-radius: var(--radius-full);
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.pillTab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-2);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+    border-radius: var(--radius-full);
+    min-width: 0;
+    white-space: nowrap;
+    min-height: 36px;
+}
+
+.pillTab:hover:not(.pillTabActive) {
+    color: var(--text-primary);
+}
+
+.pillTabActive {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.tabStep,
+.tabIcon,
+.tabLabel {
+    position: relative;
+    z-index: 1;
+}
+
+.pillTabActive:hover {
+    color: var(--text-primary);
+}
+
+.activeBackground {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-surface);
+    border-radius: var(--radius-full);
+    z-index: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.tabStep,
+.tabIcon {
+    display: none;
+}
+
+.tabLabel {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .pillNav {
+        border-radius: var(--radius-lg);
+    }
+
+    .pillTab {
+        min-height: 44px;
+        font-size: 0.6875rem;
+        padding: var(--space-2) var(--space-1);
+    }
+}
+
+@media (max-width: 480px) {
+    .pillTab {
+        font-size: 0.625rem;
+    }
+}

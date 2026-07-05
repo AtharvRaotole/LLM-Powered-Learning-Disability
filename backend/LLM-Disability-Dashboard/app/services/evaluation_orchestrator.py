@@ -1,10 +1,12 @@
-from typing import TypedDict,List
+from typing import TypedDict, List, Any
 from langgraph.graph import StateGraph
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
+import json
 import os
+import re
 load_dotenv()
 
 
@@ -17,7 +19,7 @@ class StudentState(TypedDict):
     generated_problem:str
     student_attempt:str
     improvement_analysis:str
-    practice_problems:List[str]
+    practice_problems: List[Any]
 
 async def generate_summary(state:StudentState)->StudentState:
     chain = (
@@ -73,7 +75,7 @@ async def simulate_student(state: StudentState) -> StudentState:
             {problem}
 
             Output strictly in this JSON format (no code block):
-{{"thoughts": "<student's reasoning>", "steps": ["step1", "step2", ...], "final_answer": "<answer>"}}
+{{"thoughtprocess": "<student's reasoning>", "steps_to_solve": ["step1", "step2", ...], "final_answer": "<answer>", "studentAnswer": "<same as final_answer>"}}
             """
         )
         | llm
@@ -119,14 +121,37 @@ async def generate_practice_problems(state: StudentState) -> StudentState:
             The student showed the following improvement:
             {improvement}
 
-            Generate 3 practice problems of similar type and difficulty
-            to reinforce learning. Format as a numbered list.
+            Generate exactly 3 practice problems of similar type and difficulty
+            to reinforce learning.
+
+            Return ONLY a JSON array with this exact shape:
+            [
+              {{"question": "full word problem text", "hint": "one short hint sentence"}},
+              {{"question": "full word problem text", "hint": "one short hint sentence"}},
+              {{"question": "full word problem text", "hint": "one short hint sentence"}}
+            ]
             """
         )
         | llm
         | parser
     )
     text = await chain.ainvoke({"improvement": state["improvement_analysis"]})
+    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.IGNORECASE)
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, list):
+            state["practice_problems"] = [
+                {
+                    "question": str(item.get("question", "")).strip(),
+                    "hint": str(item.get("hint", "")).strip(),
+                }
+                for item in parsed
+                if isinstance(item, dict) and item.get("question")
+            ]
+            return state
+    except json.JSONDecodeError:
+        pass
+
     state["practice_problems"] = [
         line.strip() for line in text.split("\n") if line.strip()
     ]

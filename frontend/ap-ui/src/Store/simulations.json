@@ -16,7 +16,7 @@
         },
         {
           "speaker": "Jamie",
-          "text": "Okay. I see it now—it says 4 smoothies, not 3."
+          "text": "Okay. I see it now. It says 4 smoothies, not 3."
         },
         {
           "speaker": "Tutor",
@@ -55,7 +55,7 @@
       "conversation": [
         {
           "speaker": "Tutor",
-          "text": "Hi Riley! I see you’ve written your work here—let’s take a look together."
+          "text": "Hi Riley! I see you've written your work here. Let's take a look together."
         },
         {
           "speaker": "Riley",
@@ -114,7 +114,7 @@
       },
       {
         "speaker": "Tutor",
-        "text": "Thanks for explaining. I really like that you're trying to work with the numbers! That fraction, 2/3, is actually one amount — two-thirds of a cup. Not 2 and 3 separately."
+        "text": "Thanks for explaining. I really like that you're trying to work with the numbers! That fraction, 2/3, is actually one amount: two-thirds of a cup. Not 2 and 3 separately."
       },
       {
         "speaker": "Ken",
@@ -138,7 +138,7 @@
       },
       {
         "speaker": "Tutor",
-        "text": "Perfect! 2 and 2/3 cups of milk. And next time you see a fraction, remember — it’s one number showing part of a whole, not two pieces to be added."
+        "text": "Perfect! 2 and 2/3 cups of milk. And next time you see a fraction, remember, it’s one number showing part of a whole, not two pieces to be added."
       },
       {
         "speaker": "Ken",
@@ -177,7 +177,7 @@
       },
       {
         "speaker": "Tutor",
-        "text": "Exactly! Now let’s finish strong—how many times does 3 go into 8?"
+        "text": "Exactly! Now let’s finish strong. How many times does 3 go into 8?"
       },
       {
         "speaker": "Jordan",
@@ -185,7 +185,7 @@
       },
       {
         "speaker": "Tutor",
-        "text": "Nailed it! You stayed focused and worked through each step. Try using a checklist or even a finger tap for each part next time—that can help keep track."
+        "text": "Nailed it! You stayed focused and worked through each step. Try using a checklist or even a finger tap for each part next time. That can help keep track."
       },
       {
         "speaker": "Jordan",
@@ -204,7 +204,7 @@
       },
       {
         "speaker": "Maya",
-        "text": "...Wait—did you say 2 cups for 3 smoothies?"
+        "text": "...Wait, did you say 2 cups for 3 smoothies?"
       },
       {
         "speaker": "Tutor",
@@ -216,7 +216,7 @@
       },
       {
         "speaker": "Tutor",
-        "text": "Yes, perfect! Now, we’re using the same amount—two-thirds—four times. What operation do you think that is?"
+        "text": "Yes, perfect! Now, we’re using the same amount, two-thirds, four times. What operation do you think that is?"
       },
       {
         "speaker": "Maya",
@@ -275,7 +275,7 @@
       },
       {
         "speaker": "Tutor",
-        "text": "Exactly—8/3. Now, if we want to turn 8/3 into a regular number, how many times does 3 go into 8?"
+        "text": "Exactly, 8/3. Now, if we want to turn 8/3 into a regular number, how many times does 3 go into 8?"
       },
       {
         "speaker": "Eli",

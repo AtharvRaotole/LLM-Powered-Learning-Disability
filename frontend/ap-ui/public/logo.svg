@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MindMath">
+  <defs>
+    <linearGradient id="gradLeft" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#42A5F5"/>
+      <stop offset="100%" stop-color="#7E57C2"/>
+    </linearGradient>
+    <linearGradient id="gradRight" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#26C6DA"/>
+      <stop offset="100%" stop-color="#26A69A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left hemisphere -->
+  <path fill="url(#gradLeft)" d="
+    M 244 92
+    C 214 88, 184 96, 162 112
+    C 136 130, 116 156, 106 186
+    C 96 216, 94 248, 102 280
+    C 110 312, 126 340, 150 362
+    C 172 382, 200 394, 228 398
+    C 238 400, 244 392, 244 374
+    L 244 92
+    Z"/>
+
+  <!-- Right hemisphere with speech-bubble tail -->
+  <path fill="url(#gradRight)" d="
+    M 268 92
+    C 298 88, 328 96, 350 112
+    C 376 130, 396 156, 406 186
+    C 416 216, 418 248, 410 280
+    C 402 312, 386 340, 362 362
+    C 344 378, 322 390, 300 396
+    C 288 400, 278 408, 276 422
+    C 274 436, 282 450, 296 456
+    C 310 462, 326 456, 334 442
+    C 338 432, 340 420, 350 408
+    C 372 394, 390 374, 402 350
+    C 412 322, 416 290, 410 258
+    C 404 226, 388 196, 364 172
+    C 344 152, 318 138, 290 128
+    C 278 124, 268 112, 268 92
+    Z"/>
+
+  <!-- Neural network (left) -->
+  <g stroke="#1B2A4A" stroke-width="3" stroke-linecap="round">
+    <line x1="168" y1="214" x2="198" y2="204"/>
+    <line x1="168" y1="214" x2="182" y2="248"/>
+    <line x1="168" y1="214" x2="152" y2="272"/>
+    <line x1="198" y1="204" x2="182" y2="248"/>
+    <line x1="198" y1="204" x2="208" y2="278"/>
+    <line x1="182" y1="248" x2="152" y2="272"/>
+    <line x1="182" y1="248" x2="208" y2="278"/>
+    <line x1="152" y1="272" x2="208" y2="278"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="168" cy="214" r="9"/>
+    <circle cx="198" cy="204" r="9"/>
+    <circle cx="182" cy="248" r="9"/>
+    <circle cx="152" cy="272" r="9"/>
+    <circle cx="208" cy="278" r="9"/>
+  </g>
+
+  <!-- Math symbols (right) -->
+  <g fill="#FFFFFF">
+    <rect x="318" y="206" width="34" height="6" rx="3"/>
+    <rect x="332" y="192" width="6" height="34" rx="3"/>
+
+    <rect x="318" y="256" width="34" height="6" rx="3"/>
+
+    <rect x="318" y="306" width="34" height="6" rx="3"/>
+    <circle cx="335" cy="292" r="4"/>
+    <circle cx="335" cy="326" r="4"/>
+  </g>
+</svg>

@@ -2,26 +2,66 @@ import { useEffect, useContext, useState } from "react";
 import UserContext from "../Store/UserContext";
 import classes from "./Problem.module.css";
 import { generateLangGraphProblem } from "../Utils/langgraphApi";
+import { prewarmAfterProblem } from "../Context/WorkflowProvider";
+import { persistProblem, getProblemObject, getSelectedDisabilityName } from "../Utils/workflowSession";
+import GradeDifficultyControls from "./GradeDifficultyControls";
+import {
+    DEFAULT_DIFFICULTY,
+    DEFAULT_GRADE_LEVEL,
+    getDifficultyLabel,
+    getGradeLabel,
+    persistGradeAndDifficulty,
+    readStoredDifficulty,
+    readStoredGradeLevel,
+} from "../Utils/gradeConfig";
 
 export default function Problem(){
     const userCtx = useContext(UserContext);
     const [problem, setProblem] = useState('');
     const [answer, setAnswer] = useState('');
     const [approach, setApproach] = useState('');
-    const [gradeLevel, setGradeLevel] = useState('7th');
-    const [selectedDifficulty, setSelectedDifficulty] = useState('medium');
+    const [gradeLevel, setGradeLevel] = useState(() => readStoredGradeLevel() || DEFAULT_GRADE_LEVEL);
+    const [selectedDifficulty, setSelectedDifficulty] = useState(() => readStoredDifficulty() || DEFAULT_DIFFICULTY);
     const [concepts, setConcepts] = useState([]);
     const [difficulty, setDifficulty] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isPrewarming, setIsPrewarming] = useState(false);
     const [error, setError] = useState(null);
+    const [answerValidated, setAnswerValidated] = useState(false);
+    const [showAnswer, setShowAnswer] = useState(false);
+    const [showSolution, setShowSolution] = useState(false);
 
     useEffect(() => {
-        generateProblem();
+        const stored = getProblemObject();
+        if (stored?.problem) {
+            hydrateFromStorage(stored);
+        } else {
+            generateProblem();
+        }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        persistGradeAndDifficulty(gradeLevel, selectedDifficulty);
+    }, [gradeLevel, selectedDifficulty]);
+
+    function hydrateFromStorage(stored) {
+        userCtx.setGeneratedProblem(stored.problem);
+        userCtx.setAnswer(stored.answer || "");
+        userCtx.setApproach(stored.solution || "");
+
+        setProblem(stored.problem);
+        setAnswer(stored.answer || "");
+        setApproach(stored.solution || "");
+        setConcepts(stored.concepts || []);
+        setDifficulty(stored.difficulty || "");
+        setAnswerValidated(Boolean(stored.answer_validated));
+    }
 
     async function generateProblem(){
         setIsLoading(true);
         setError(null);
+        setShowAnswer(false);
+        setShowSolution(false);
         try{
             const problemData = await generateLangGraphProblem({
                 grade_level: gradeLevel,
@@ -32,28 +72,33 @@ export default function Problem(){
                 throw new Error("Problem generation returned empty data");
             }
 
-            userCtx.setGeneratedProblem(problemData.problem);
-            userCtx.setAnswer(problemData.answer);
-            userCtx.setApproach(problemData.solution);
+            const canonical = persistProblem({
+                ...problemData,
+                grade_level: gradeLevel,
+                difficulty: problemData.difficulty || selectedDifficulty,
+                answer_validated: Boolean(
+                    problemData.answer_validated ?? problemData.metadata?.answer_validated
+                ),
+            });
 
-            sessionStorage.setItem("problem", problemData.problem);
-            sessionStorage.setItem("answer", problemData.answer || "");
-            sessionStorage.setItem("approach", problemData.solution || "");
-            // Persist full problem JSON so downstream flows (Tutor/consistency)
-            // can access the canonical expected answer reliably.
-            try {
-                sessionStorage.setItem("problem_json", JSON.stringify(problemData));
-            } catch (e) {
-                // Non-fatal: fallback keys above still allow basic flow.
-            }
-            sessionStorage.setItem("difficulty", selectedDifficulty);
-            sessionStorage.setItem("gradeLevel", gradeLevel);
+            userCtx.setGeneratedProblem(canonical.problem);
+            userCtx.setAnswer(canonical.answer);
+            userCtx.setApproach(canonical.solution);
 
-            setProblem(problemData.problem);
-            setAnswer(problemData.answer || "");
-            setApproach(problemData.solution || "");
+            setProblem(canonical.problem);
+            setAnswer(canonical.answer);
+            setApproach(canonical.solution);
             setConcepts(problemData.concepts || []);
-            setDifficulty(problemData.difficulty || selectedDifficulty);
+            setDifficulty(canonical.difficulty || selectedDifficulty);
+            setAnswerValidated(Boolean(canonical.answer_validated));
+
+            const selectedDisability = getSelectedDisabilityName();
+            if (selectedDisability) {
+                setIsPrewarming(true);
+                prewarmAfterProblem(selectedDisability)
+                    .catch((err) => console.warn("Prewarm failed:", err))
+                    .finally(() => setIsPrewarming(false));
+            }
         } catch(error) {
             setError(`Failed to generate problem: ${error.message}`);
         } finally {
@@ -62,133 +107,122 @@ export default function Problem(){
     }
 
     return(
-        <div className={classes.problemContainer}>
-            <div className={classes.header}>
-                <div className={classes.title}>
-                    <div className={classes.icon}>📚</div>
-                    Math Problem Generator
-                </div>
-                <div className={classes.ctaText}>
-                    <div className={classes.ctaTitle}>🎯 Start Here: Generate Your Math Problem</div>
-                    <div className={classes.ctaDescription}>
-                        <strong>Step 1:</strong> Generate a math problem, then select a learning disability to see how students with different needs would approach it.
-                    </div>
-                    <div className={classes.ctaSteps}>
-                        <div className={classes.step}>1️⃣ Generate Problem</div>
-                        <div className={classes.arrow}>→</div>
-                        <div className={classes.step}>2️⃣ Select Disability</div>
-                        <div className={classes.arrow}>→</div>
-                        <div className={classes.step}>3️⃣ View Simulation</div>
-                        <div className={classes.arrow}>→</div>
-                        <div className={classes.step}>4️⃣ See Analysis</div>
-                    </div>
-                </div>
-                <div className={classes.controls}>
-                    <div className={classes.gradeSelector}>
-                        <label htmlFor="gradeLevel">Grade Level:</label>
-                        <select 
-                            id="gradeLevel"
-                            value={gradeLevel} 
-                            onChange={(e) => setGradeLevel(e.target.value)}
-                            className={classes.select}
-                        >
-                            <option value="2nd">2nd Grade</option>
-                            <option value="5th">5th Grade</option>
-                            <option value="7th">7th Grade</option>
-                        </select>
-                    </div>
-                    <div className={classes.gradeSelector}>
-                        <label htmlFor="difficulty">Difficulty:</label>
-                        <select 
-                            id="difficulty"
-                            value={selectedDifficulty} 
-                            onChange={(e) => setSelectedDifficulty(e.target.value)}
-                            className={classes.select}
-                        >
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                        </select>
-                    </div>
-                    <button 
-                        className={classes.refreshBtn} 
-                        onClick={generateProblem}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? '⏳' : '🔄'} Generate New Problem
-                    </button>
-                </div>
-            </div>
-            
+        <div className={classes.page}>
+            <header className={classes.header}>
+                <h1 className={classes.largeTitle}>Problem Generator</h1>
+                <p className={classes.subtitle}>
+                    Generate a math problem, then explore how different learning disabilities affect problem-solving.
+                </p>
+            </header>
+
+            <section className={classes.controlsCard}>
+                <GradeDifficultyControls
+                    gradeLevel={gradeLevel}
+                    difficulty={selectedDifficulty}
+                    onGradeChange={setGradeLevel}
+                    onDifficultyChange={setSelectedDifficulty}
+                />
+                <button
+                    className={classes.generateBtn}
+                    onClick={generateProblem}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Generating…' : 'Generate New Problem'}
+                </button>
+            </section>
+
             {isLoading && (
-                <div className={classes.loading}>
-                    Generating a new math problem...
+                <div className={classes.statusBanner}>
+                    <span className={classes.spinner} aria-hidden="true" />
+                    Generating a new math problem…
                 </div>
             )}
-            
+
             {error && (
-                <div className={classes.error}>
+                <div className={classes.errorBanner} role="alert">
                     {error}
                 </div>
             )}
-            
+
+            {isPrewarming && (
+                <div className={classes.statusBanner}>
+                    <span className={classes.spinner} aria-hidden="true" />
+                    Preparing simulation cache…
+                </div>
+            )}
+
             {!isLoading && problem && (
-                <>
-                    <div className={classes.section}>
-                        <div className={classes.sectionTitle}>Problem Statement</div>
-                        <div className={classes.sectionContent}>{problem}</div>
-                        <div className={classes.metaInfo}>
-                            <span className={classes.gradeLevel}>Grade: {gradeLevel}</span>
-                            {difficulty && <span className={classes.difficulty}>Difficulty: {difficulty}</span>}
-                        </div>
-                    </div>
-                    
-                    {concepts.length > 0 && (
-                        <div className={classes.section}>
-                            <div className={classes.sectionTitle}>Math Concepts</div>
-                            <div className={classes.conceptsList}>
-                                {concepts.map((concept, index) => (
-                                    <span key={index} className={classes.conceptTag}>
-                                        {concept}
-                                    </span>
-                                ))}
+                <div className={classes.groupedList}>
+                    <section className={classes.group}>
+                        <div className={classes.groupHeader}>Problem Statement</div>
+                        <div className={classes.groupCell}>
+                            <p className={classes.problemText}>{problem}</p>
+                            <div className={classes.metaRow}>
+                                <span className={classes.metaChip}>{getGradeLabel(gradeLevel)}</span>
+                                {difficulty && (
+                                    <span className={classes.metaChip}>{getDifficultyLabel(difficulty)}</span>
+                                )}
+                                {answerValidated && (
+                                    <span className={`${classes.metaChip} ${classes.metaChipVerified}`}>Verified</span>
+                                )}
                             </div>
                         </div>
+                    </section>
+
+                    {concepts.length > 0 && (
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Concepts</div>
+                            <div className={classes.groupCell}>
+                                <div className={classes.conceptTags}>
+                                    {concepts.map((concept, index) => (
+                                        <span key={index} className={classes.conceptTag}>{concept}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
                     )}
-                    
-                    <details className={classes.section}>
-                        <summary className={classes.sectionTitle}>Reveal Correct Answer</summary>
-                        <div className={classes.sectionContent}>{answer}</div>
-                    </details>
-                    
-                    <details className={classes.section}>
-                        <summary className={classes.sectionTitle}>Reveal Solution Approach</summary>
-                        <div className={classes.solutionSteps}>
-                            {approach.split('\n').map((step, index) => {
-                                // Clean up the step and check if it's a numbered step
-                                const cleanStep = step.trim();
-                                if (cleanStep && (cleanStep.match(/^\d+\./) || cleanStep.match(/^Step \d+/i))) {
+
+                    <section className={classes.group}>
+                        <button
+                            type="button"
+                            className={classes.disclosureRow}
+                            onClick={() => setShowAnswer(!showAnswer)}
+                            aria-expanded={showAnswer}
+                        >
+                            <span>Correct Answer</span>
+                            <span className={classes.disclosureChevron}>{showAnswer ? '−' : '+'}</span>
+                        </button>
+                        {showAnswer && (
+                            <div className={classes.disclosureContent}>{answer}</div>
+                        )}
+                    </section>
+
+                    <section className={classes.group}>
+                        <button
+                            type="button"
+                            className={classes.disclosureRow}
+                            onClick={() => setShowSolution(!showSolution)}
+                            aria-expanded={showSolution}
+                        >
+                            <span>Solution Approach</span>
+                            <span className={classes.disclosureChevron}>{showSolution ? '−' : '+'}</span>
+                        </button>
+                        {showSolution && (
+                            <div className={classes.disclosureContent}>
+                                {approach.split('\n').map((step, index) => {
+                                    const cleanStep = step.trim();
+                                    if (!cleanStep) return null;
                                     return (
-                                        <div key={index} className={classes.step}>
-                                            <div className={classes.stepNumber}>{index + 1}</div>
-                                            <div className={classes.stepContent}>
-                                                {cleanStep.replace(/^\d+\.\s*/, '').replace(/^Step \d+:\s*/i, '')}
-                                            </div>
+                                        <div key={index} className={classes.solutionStep}>
+                                            <span className={classes.stepNum}>{index + 1}</span>
+                                            <span>{cleanStep.replace(/^\d+\.\s*/, '').replace(/^Step \d+:\s*/i, '')}</span>
                                         </div>
                                     );
-                                } else if (cleanStep) {
-                                    return (
-                                        <div key={index} className={classes.step}>
-                                            <div className={classes.stepNumber}>{index + 1}</div>
-                                            <div className={classes.stepContent}>{cleanStep}</div>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })}
-                        </div>
-                    </details>
-                </>
+                                })}
+                            </div>
+                        )}
+                    </section>
+                </div>
             )}
         </div>
     )

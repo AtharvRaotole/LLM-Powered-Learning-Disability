@@ -1,9 +1,11 @@
 .container {
     padding: 20px;
-    background: white;
+    background: var(--bg-surface);
     border-radius: 12px;
     margin: 20px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .header {
@@ -30,7 +32,7 @@
 }
 
 .subtitle {
-    color: #64748b;
+    color: var(--text-page-muted, var(--text-muted));
     margin: 4px 0 0 0;
     font-weight: 400;
 }
@@ -63,7 +65,7 @@
     padding: 8px 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
-    background: white;
+    background: var(--bg-surface);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -174,7 +176,7 @@
 }
 
 .confidence {
-    background: white;
+    background: var(--bg-surface);
     color: #0369a1;
     padding: 4px 12px;
     border-radius: 20px;
@@ -195,7 +197,7 @@
     gap: 16px;
     justify-content: center;
     padding: 20px;
-    background: white;
+    background: var(--bg-surface);
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
@@ -210,7 +212,7 @@
 
 .label {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -247,7 +249,7 @@
 }
 
 .reasoning {
-    background: white;
+    background: var(--bg-surface);
     padding: 16px;
     border-radius: 8px;
     border-left: 4px solid #667eea;
@@ -259,7 +261,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 16px;
-    background: white;
+    background: var(--bg-surface);
     padding: 16px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
@@ -274,7 +276,7 @@
 
 .metricLabel {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -303,7 +305,7 @@
 }
 
 .recommendations {
-    background: white;
+    background: var(--bg-surface);
     padding: 16px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
@@ -338,7 +340,7 @@
 }
 
 .sessionCard {
-    background: white;
+    background: var(--bg-surface);
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 12px;
@@ -368,7 +370,7 @@
 
 .sessionMeta {
     font-size: 0.85rem;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .sessionStats {
@@ -409,7 +411,7 @@
 }
 
 .summaryCard {
-    background: white;
+    background: var(--bg-surface);
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 20px;
@@ -515,7 +517,7 @@
     align-items: center;
     gap: 12px;
     padding: 40px;
-    background: white;
+    background: var(--bg-surface);
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
@@ -533,19 +535,36 @@
 
 .chartSubtext {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
     .container {
-        margin: 10px;
-        padding: 16px;
+        margin: 0;
+        padding: var(--space-3);
+        border-radius: var(--radius-lg);
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+
+    .title {
+        font-size: 1.35rem;
+        flex-wrap: wrap;
+    }
+
+    .icon {
+        font-size: 1.5rem;
     }
     
     .controls {
         flex-direction: column;
         align-items: stretch;
+        padding: var(--space-4);
     }
     
     .actionButtons {

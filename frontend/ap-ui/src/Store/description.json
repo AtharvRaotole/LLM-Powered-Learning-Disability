@@ -1,278 +1,429 @@
 {
-    "1": {
-      "title": "Dyslexia",
-      "sections": [
-        {
-          "heading": "What is Dyslexia?",
-          "content": "Dyslexia is a common learning difficulty that primarily affects a person's ability to read, spell, and write. It stems from differences in how the brain processes language, not from a lack of intelligence or effort. People with dyslexia often have trouble recognizing letters, decoding words, and connecting sounds to letters. Although dyslexia is a lifelong condition, with the right strategies and support, individuals with dyslexia can achieve success in academics, careers, and everyday life."
-        },
-        {
-          "heading": "History of Dyslexia",
-          "content": "Dyslexia was first formally described in 1896 by British physician W. Pringle Morgan, who documented a case of a young boy with normal intelligence but severe reading difficulties. Early theories mistakenly linked dyslexia to vision problems, but research later showed that it is a language-based learning difference. Over the 20th century, understanding of dyslexia evolved significantly, leading to better diagnostic tools, teaching methods, and public awareness campaigns that emphasize early intervention and support."
-        },
-        {
-          "heading": "Symptoms of Dyslexia",
-          "content": [
-            "Difficulty learning the alphabet, rhyming words, or recognizing sounds in words (phonemic awareness)",
-            "Slow and effortful reading",
-            "Frequent spelling mistakes or inconsistent spelling",
-            "Trouble understanding what is read, despite understanding spoken language",
-            "Mixing up the order of letters when writing",
-            "Struggles with remembering sequences, like days of the week or multiplication tables",
-            "Reluctance to read aloud in class or at home"
-          ]
-        },
-        {
-          "heading": "Implications of Dyslexia",
-          "content": "Dyslexia can significantly impact academic progress and self-esteem if not identified early. Children with dyslexia may feel frustration, embarrassment, or anxiety related to school tasks, leading to avoidance behaviors. In adulthood, challenges may persist in careers requiring extensive reading or writing. However, many individuals with dyslexia develop strong problem-solving skills, creativity, and perseverance, excelling in fields such as art, engineering, entrepreneurship, and storytelling."
-        },
-        {
-          "heading": "Methods to Overcome Dyslexia",
-          "content": [
-            "Structured Literacy Programs: Techniques like the Orton-Gillingham approach use explicit, multisensory teaching to reinforce reading skills.",
-            "Multisensory Learning: Involves using visual, auditory, and kinesthetic-tactile pathways together to enhance memory and learning of written language.",
-            "Assistive Technology: Tools such as text-to-speech software, audiobooks, and speech-to-text programs help bridge learning gaps.",
-            "Individualized Support: Tailored tutoring sessions, small classroom accommodations, and extra time for tests can reduce learning pressure.",
-            "Building Confidence: Encouraging strengths outside traditional reading and writing areas helps maintain motivation and self-esteem."
-          ],
-          "closing": "Early diagnosis, consistent support, and a positive learning environment are the keys to helping individuals with dyslexia reach their full potential."
-        }
-      ]
-    },
-    "2": {
-        "title": "Dysgraphia",
-        "sections": [
-          {
-            "heading": "What is Dysgraphia?",
-            "content": "Dysgraphia is a learning disorder that affects writing abilities. It impacts handwriting, spelling, and the organization of thoughts on paper. Individuals with dysgraphia may have unclear or inconsistent handwriting, difficulty putting thoughts into written words, and trouble with fine motor skills related to writing. It is important to note that dysgraphia is not related to a person's intelligence; it specifically affects the physical act and process of writing."
-          },
-          {
-            "heading": "History of Dysgraphia",
-            "content": "The concept of dysgraphia was first explored in the early 20th century when educators and psychologists noticed that some children struggled with writing despite having normal or even above-average intelligence. Research gradually showed that dysgraphia was not simply poor penmanship but a specific neurological disorder affecting fine motor skills, visual-spatial processing, and language production. Awareness of dysgraphia grew significantly alongside other learning disabilities like dyslexia during the 1960s and 1970s."
-          },
-          {
-            "heading": "Symptoms of Dysgraphia",
-            "content": [
-              "Poor handwriting that is difficult to read",
-              "Inconsistent spacing between words and letters",
-              "Frequent spelling errors",
-              "Difficulty organizing ideas clearly when writing",
-              "Holding a pencil awkwardly or writing with unusual pressure",
-              "Avoiding written assignments or showing frustration when writing",
-              "Problems with grammar, punctuation, and sentence structure"
-            ]
-          },
-          {
-            "heading": "Implications of Dysgraphia",
-            "content": "Dysgraphia can affect academic performance and self-confidence, particularly in environments where written expression is heavily emphasized. Students may experience frustration, embarrassment, or anxiety about writing tasks, leading to avoidance or decreased participation. In adulthood, dysgraphia can affect careers requiring written communication or detailed note-taking. However, individuals with dysgraphia often have strong verbal skills, creativity, and original thinking, and can excel when supported with appropriate strategies."
-          },
-          {
-            "heading": "Methods to Overcome Dysgraphia",
-            "content": [
-              "Occupational Therapy: Therapists help individuals strengthen fine motor skills and develop better hand control.",
-              "Use of Technology: Typing on a keyboard, using speech-to-text software, and other assistive devices can reduce reliance on handwriting.",
-              "Structured Writing Instruction: Breaking writing tasks into smaller steps and using graphic organizers to plan thoughts.",
-              "Alternative Assignments: Allowing oral presentations or video projects instead of handwritten work.",
-              "Extended Time and Reduced Writing Load: Providing accommodations during tests and assignments to ease writing pressure."
-            ],
-            "closing": "With early intervention, consistent practice, and appropriate accommodations, individuals with dysgraphia can improve their writing skills and succeed in academic and professional settings."
-          }
+  "1": {
+    "title": "Dyslexia",
+    "tldr": "Dyslexia is a common learning difference that makes reading, spelling, and writing harder. It is not about intelligence or laziness. The brain processes language in a different way. With the right support, people with dyslexia can do very well in school and work.",
+    "sections": [
+      {
+        "heading": "What is Dyslexia?",
+        "content": "Dyslexia affects how the brain handles written language. People with dyslexia often struggle to connect letters with sounds, decode words, and read fluently. It has nothing to do with how smart someone is. Many people with dyslexia are creative, strong problem solvers, and great at thinking outside the box.",
+        "examples": [
+          "A third grader might read the word 'was' as 'saw' even after sounding it out carefully.",
+          "An adult might need extra time to read a work email but can explain the same idea clearly when speaking."
         ]
       },
-      "3": {
+      {
+        "heading": "History of Dyslexia",
+        "content": "In 1896, a British doctor named W. Pringle Morgan wrote about a bright boy who could not learn to read. Early researchers thought dyslexia was a vision problem. Later studies showed it is really about language processing in the brain. Over time, schools developed better screening tools and teaching methods. Today, early support and structured reading programs are widely recommended.",
+        "examples": [
+          "The Orton-Gillingham approach, developed in the 1930s, is still used today to teach reading through step-by-step, multisensory lessons.",
+          "Many countries now screen young children for reading difficulties in kindergarten or first grade."
+        ]
+      },
+      {
+        "heading": "Symptoms of Dyslexia",
+        "content": [
+          "Difficulty learning letter sounds and rhyming words",
+          "Slow, effortful reading that takes a lot of energy",
+          "Spelling the same word differently each time",
+          "Trouble understanding written text even when spoken language is strong",
+          "Mixing up the order of letters when writing",
+          "Difficulty remembering sequences like days of the week",
+          "Avoiding reading aloud in class or at home"
+        ],
+        "examples": [
+          "A student might know what a story is about when it is read to them but struggle to answer questions after reading it alone.",
+          "A teenager might spell 'because' as 'becuase' or 'becaus' in the same essay."
+        ]
+      },
+      {
+        "heading": "Implications of Dyslexia",
+        "content": "Without support, dyslexia can slow down learning and hurt confidence. Students may feel frustrated or embarrassed, which can lead them to avoid reading tasks. In jobs that require heavy reading, challenges may continue into adulthood. At the same time, many people with dyslexia build strong skills in areas like art, engineering, design, and entrepreneurship.",
+        "examples": [
+          "A student who avoids homework reading may fall behind in subjects that rely on textbooks.",
+          "An entrepreneur with dyslexia might use voice memos and audio books to run a successful business."
+        ]
+      },
+      {
+        "heading": "Methods to Overcome Dyslexia",
+        "content": [
+          "Structured literacy programs that teach reading in a clear, step-by-step way",
+          "Multisensory learning that combines seeing, hearing, and touching (like tracing letters while saying sounds)",
+          "Assistive technology such as text-to-speech, audiobooks, and speech-to-text tools",
+          "Extra time on tests and assignments to reduce pressure",
+          "Focus on strengths and interests to build confidence"
+        ],
+        "closing": "Early identification, consistent support, and a positive learning environment help people with dyslexia reach their full potential.",
+        "examples": [
+          "A student uses a text-to-speech app to listen to a science chapter, then discusses it with the class.",
+          "A teacher gives a student extra time on a reading quiz so they can show what they know without rushing."
+        ]
+      }
+    ]
+  },
+  "2": {
+    "title": "Dysgraphia",
+    "tldr": "Dysgraphia makes writing difficult. It can affect handwriting, spelling, and getting thoughts onto paper. It is not a sign of low intelligence. Many people with dysgraphia have strong verbal skills and do well when they can express ideas in other ways.",
+    "sections": [
+      {
+        "heading": "What is Dysgraphia?",
+        "content": "Dysgraphia is a learning difference that affects writing. It can show up as messy handwriting, poor spelling, or trouble organizing ideas on paper. Some people have motor-based dysgraphia (the physical act of writing is hard). Others have language-based dysgraphia (putting thoughts into written words is hard). Both types are real and deserve support.",
+        "examples": [
+          "A student might have great ideas in a class discussion but write only one short sentence on paper.",
+          "An adult might type quickly and clearly but struggle to write a legible grocery list by hand."
+        ]
+      },
+      {
+        "heading": "History of Dysgraphia",
+        "content": "Educators and doctors began noticing writing difficulties in the early 1900s. At first, many people thought it was just bad handwriting. Research over the decades showed that dysgraphia involves the brain, fine motor skills, and language production. Awareness grew alongside dyslexia during the 1960s and 1970s. Today, dysgraphia is recognized as its own learning difference with specific supports.",
+        "examples": [
+          "Early school reports often said a child was 'careless' with writing when the real issue was dysgraphia.",
+          "Modern evaluations now test both handwriting speed and the ability to express ideas in writing."
+        ]
+      },
+      {
+        "heading": "Symptoms of Dysgraphia",
+        "content": [
+          "Handwriting that is hard to read or inconsistent",
+          "Uneven spacing between letters and words",
+          "Frequent spelling mistakes",
+          "Difficulty organizing thoughts in written form",
+          "Awkward pencil grip or unusual writing pressure",
+          "Avoidance of writing tasks or frustration when writing",
+          "Problems with grammar and sentence structure in written work"
+        ],
+        "examples": [
+          "A student might erase and rewrite the same word several times and still be unhappy with how it looks.",
+          "A child might refuse to do a worksheet that requires more than a few written sentences."
+        ]
+      },
+      {
+        "heading": "Implications of Dysgraphia",
+        "content": "Schools often grade written work heavily, so dysgraphia can affect grades even when a student understands the material. Students may feel anxious or embarrassed about their writing. In adulthood, jobs that require lots of handwritten notes can be challenging. Many people with dysgraphia excel when allowed to use typing, voice recording, or oral presentations instead.",
+        "examples": [
+          "A student who knows the math answer might lose points because the written steps are messy or incomplete.",
+          "A nurse with dysgraphia might use a tablet to type patient notes instead of writing by hand."
+        ]
+      },
+      {
+        "heading": "Methods to Overcome Dysgraphia",
+        "content": [
+          "Occupational therapy to build fine motor skills and hand strength",
+          "Typing and speech-to-text tools to reduce reliance on handwriting",
+          "Graphic organizers to plan writing before starting",
+          "Alternative assignments like oral reports or video projects",
+          "Extra time and shorter writing requirements on tests"
+        ],
+        "closing": "With the right tools and accommodations, people with dysgraphia can share their ideas clearly and succeed in school and work.",
+        "examples": [
+          "A student uses a speech-to-text app to draft an essay, then edits it on the computer.",
+          "A teacher accepts a recorded oral book report instead of a handwritten summary."
+        ]
+      }
+    ]
+  },
+  "3": {
     "title": "Dyscalculia",
+    "tldr": "Dyscalculia makes it hard to understand numbers, math facts, and math concepts. It is not the same as being 'bad at math' because you did not try. People with dyscalculia often struggle with number sense, but they can learn math with the right teaching approach.",
     "sections": [
       {
         "heading": "What is Dyscalculia?",
-        "content": "Dyscalculia is a learning disorder that specifically affects a person's ability to understand numbers and mathematical concepts. Individuals with dyscalculia may struggle with basic arithmetic, number sense, telling time, or estimating quantities. It is sometimes referred to as 'math dyslexia,' though it is distinct from reading disorders."
+        "content": "Dyscalculia is a learning difference that affects math skills. It can make it hard to understand quantities, remember math facts, tell time, or follow steps in a math problem. Like dyslexia, it is rooted in how the brain processes information. It does not mean a person cannot learn math. It means they may need different strategies and more practice with basic number concepts.",
+        "examples": [
+          "A student might not know which of two numbers is larger without counting on fingers every time.",
+          "An adult might struggle to estimate a tip at a restaurant even though they handle money fine day to day."
+        ]
       },
       {
         "heading": "History of Dyscalculia",
-        "content": "Dyscalculia began gaining attention in the 20th century, when researchers studying learning differences observed that some individuals had specific and persistent difficulties with mathematics. The term 'developmental dyscalculia' emerged in the 1970s. Since then, studies have shown it has a neurological basis, often involving areas of the brain related to numerical processing."
+        "content": "The term dyscalculia comes from Greek words meaning 'difficulty with counting.' Researchers have studied math learning differences since the early 1900s, but dyscalculia was not widely recognized until the late 20th century. Brain imaging studies in the 2000s showed that the same brain areas involved in reading are also linked to number processing. Today, dyscalculia is accepted as a specific learning difference, though it is still less well known than dyslexia.",
+        "examples": [
+          "A 1919 study by Salomon Henschen linked math difficulties to brain injury, which helped researchers see math as a brain-based skill.",
+          "Modern schools are starting to screen for dyscalculia, though many still focus mainly on reading screening."
+        ]
       },
       {
         "heading": "Symptoms of Dyscalculia",
         "content": [
-          "Difficulty understanding basic math concepts like addition, subtraction, or multiplication",
-          "Struggles with recognizing numerical patterns or sequences",
-          "Problems estimating time, money, or distances",
-          "Difficulty remembering math facts and formulas",
-          "Getting easily confused by charts, graphs, or maps",
-          "Anxiety or frustration related to math activities"
+          "Difficulty understanding what numbers mean (number sense)",
+          "Trouble learning basic math facts like times tables",
+          "Confusion with math symbols (+, -, x, /)",
+          "Difficulty telling time on analog clocks",
+          "Problems with money, measuring, or estimating quantities",
+          "Trouble following multi-step math directions",
+          "High anxiety or avoidance around math tasks"
+        ],
+        "examples": [
+          "A student might solve 3 + 5 correctly but not know if the answer should be bigger or smaller than 5.",
+          "A teenager might mix up steps in a long division problem even after watching a demo."
         ]
       },
       {
         "heading": "Implications of Dyscalculia",
-        "content": "Dyscalculia can make everyday activities involving numbers challenging, such as managing finances, measuring ingredients, or reading schedules. It can affect academic performance, self-esteem, and career choices. However, individuals with dyscalculia often excel in areas unrelated to math, such as writing, creativity, or problem-solving."
+        "content": "Math is required in almost every grade and many careers, so dyscalculia can affect confidence and daily life. Students may develop math anxiety that makes learning even harder. Simple tasks like budgeting, cooking measurements, or reading a bus schedule can be stressful. With support, many people with dyscalculia build practical math skills and find careers that play to their strengths.",
+        "examples": [
+          "A student who failed a timed multiplication test might believe they are 'just not a math person.'",
+          "An adult might use a calculator for basic tasks but feel embarrassed to ask for help."
+        ]
       },
       {
         "heading": "Methods to Overcome Dyscalculia",
         "content": [
-          "Using visual aids like number lines, diagrams, and physical objects",
-          "Breaking down problems into smaller, manageable steps",
-          "Allowing extra time for math tasks and tests",
-          "Employing specialized tutoring focused on number sense",
-          "Using calculators or digital tools to support calculations"
+          "Hands-on tools like blocks, number lines, and counters to make math concrete",
+          "Step-by-step instruction with visual aids and fewer steps at a time",
+          "Extra practice with basic number concepts before moving to harder topics",
+          "Calculator access when speed is not the goal",
+          "Reducing math anxiety through patience and positive feedback"
         ],
-        "closing": "Early identification and the use of supportive strategies can help individuals with dyscalculia develop practical math skills and build confidence."
+        "closing": "Dyscalculia does not mean a person will never understand math. With concrete tools, patient teaching, and the right accommodations, progress is absolutely possible.",
+        "examples": [
+          "A teacher uses colored blocks to show that 3 groups of 4 equals 12 before introducing multiplication symbols.",
+          "A student uses a calculator for homework but still learns the concept by drawing diagrams on paper."
+        ]
       }
     ]
   },
   "4": {
-    "title": "ADHD (Attention Deficit Hyperactivity Disorder)",
+    "title": "ADHD",
+    "tldr": "ADHD (Attention Deficit Hyperactivity Disorder) affects focus, impulse control, and activity level. It is a real brain-based condition, not a character flaw. People with ADHD often have creative minds and high energy. With structure and support, they can thrive in school and life.",
     "sections": [
       {
         "heading": "What is ADHD?",
-        "content": "ADHD is a neurodevelopmental disorder characterized by persistent patterns of inattention, hyperactivity, and impulsivity. It affects both children and adults and can impact school performance, work productivity, and social relationships. ADHD is not a sign of low intelligence or lack of discipline but reflects how the brain regulates attention and behavior."
+        "content": "ADHD is a condition that affects how the brain manages attention, impulses, and activity. There are three main types: mostly inattentive (hard to focus), mostly hyperactive-impulsive (very active and quick to act), and combined (both). ADHD is usually diagnosed in childhood but often continues into adulthood. It is not caused by bad parenting or too much screen time.",
+        "examples": [
+          "A student with inattentive ADHD might stare out the window during a lesson even though they want to pay attention.",
+          "An adult might start several projects at once and struggle to finish any of them on time."
+        ]
       },
       {
         "heading": "History of ADHD",
-        "content": "Descriptions of ADHD-like behavior date back to the 18th century, but the modern understanding of ADHD developed in the early 1900s. Initially described as 'minimal brain dysfunction,' the condition was later renamed Attention Deficit Disorder (ADD) and finally ADHD to capture both attention and hyperactivity symptoms."
+        "content": "Doctors have described ADHD-like symptoms for over 200 years. In 1902, British pediatrician George Still wrote about children who were restless and could not follow rules. The condition was called 'minimal brain dysfunction' in the 1960s and 'ADD' in the 1980s. The name ADHD became standard in 1987. Research has grown rapidly since then, showing clear links to brain development and genetics.",
+        "examples": [
+          "Early descriptions called restless children 'fidgety' or 'defective in moral control' before the medical understanding improved.",
+          "Today, millions of children and adults worldwide are diagnosed and treated for ADHD."
+        ]
       },
       {
         "heading": "Symptoms of ADHD",
         "content": [
-          "Difficulty focusing on tasks or instructions",
-          "Frequent careless mistakes or forgetting details",
-          "Excessive talking or interrupting others",
-          "Impulsive actions without considering consequences",
-          "Restlessness or inability to stay seated",
-          "Difficulty organizing tasks and managing time"
+          "Difficulty staying focused on tasks, especially ones that feel boring",
+          "Easily distracted by sounds, sights, or thoughts",
+          "Forgetfulness with daily tasks, homework, or belongings",
+          "Restlessness, fidgeting, or difficulty sitting still",
+          "Acting or speaking without thinking through consequences",
+          "Trouble organizing materials, time, or steps in a project",
+          "Strong emotions that feel hard to control"
+        ],
+        "examples": [
+          "A student might forget to turn in completed homework because it is buried in their backpack.",
+          "A child might blurt out an answer before the teacher finishes the question."
         ]
       },
       {
         "heading": "Implications of ADHD",
-        "content": "ADHD can make academic achievement and professional success challenging without appropriate support. Individuals with ADHD might struggle with completing assignments, following schedules, or maintaining focus in meetings. However, many people with ADHD demonstrate high levels of creativity, energy, and innovation when their strengths are properly channeled."
+        "content": "ADHD can make school, relationships, and daily routines harder. Students may be labeled as lazy or disruptive when they are actually struggling to regulate their attention and behavior. Untreated ADHD can lead to low self-esteem and anxiety. On the positive side, many people with ADHD are energetic, creative, and able to hyperfocus on topics they love.",
+        "examples": [
+          "A student who interrupts class may be trying to share an idea before they forget it, not trying to be rude.",
+          "An entrepreneur with ADHD might work intensely for hours on a project they are passionate about."
+        ]
       },
       {
         "heading": "Methods to Overcome ADHD",
         "content": [
-          "Behavioral therapies and coaching to improve organizational skills",
-          "Structured routines and clear expectations",
-          "Use of timers, planners, and reminders",
-          "Medication prescribed by a healthcare professional when appropriate",
-          "Mindfulness and physical activity to manage hyperactivity and impulsiveness"
+          "Clear routines and visual schedules to reduce forgetfulness",
+          "Breaking tasks into small, manageable steps",
+          "Movement breaks and fidget tools to help with restlessness",
+          "Medication when recommended by a doctor, combined with behavioral strategies",
+          "Positive reinforcement and patience from teachers and family"
         ],
-        "closing": "Supportive environments, positive reinforcement, and skill-building strategies enable individuals with ADHD to succeed and thrive."
+        "closing": "ADHD is manageable. With structure, understanding, and the right mix of strategies, people with ADHD can achieve great things.",
+        "examples": [
+          "A student uses a checklist app to track homework and gets a five-minute walk break between subjects.",
+          "A teacher seats an easily distracted student near the front and gives instructions one step at a time."
+        ]
       }
     ]
   },
   "5": {
-    "title": "APD (Auditory Processing Disorder)",
+    "title": "Auditory Processing Disorder (APD)",
+    "tldr": "APD makes it hard for the brain to understand what it hears, even when hearing is normal. Background noise, fast speech, and complex directions can be especially difficult. With accommodations like written instructions and quieter settings, people with APD can learn and communicate effectively.",
     "sections": [
       {
-        "heading": "What is APD?",
-        "content": "Auditory Processing Disorder (APD) is a condition where the brain has difficulty processing and interpreting sounds, especially speech. People with APD typically have normal hearing ability but struggle to understand spoken information, particularly in noisy environments."
-      },
-      {
-        "heading": "History of APD",
-        "content": "Research into APD began in the mid-20th century when audiologists noticed that some children and adults had difficulty understanding speech despite normal hearing tests. Studies have since explored the neurological basis of APD, emphasizing the importance of early diagnosis and targeted interventions."
-      },
-      {
-        "heading": "Symptoms of APD",
-        "content": [
-          "Difficulty following spoken instructions",
-          "Frequently asking people to repeat themselves",
-          "Misunderstanding words, especially in noisy settings",
-          "Difficulty distinguishing similar sounds",
-          "Poor listening skills and short auditory attention span",
-          "Trouble with phonics, spelling, and reading comprehension"
+        "heading": "What is Auditory Processing Disorder?",
+        "content": "APD is a condition where the ears work fine, but the brain has trouble processing sounds. A person might hear words but not catch the difference between similar sounds (like 'cat' and 'cap'). They may struggle to follow spoken directions, especially in noisy places. APD is not a hearing loss. It is about how the brain makes sense of what the ears pick up.",
+        "examples": [
+          "A student might ask 'What?' often in class even though a hearing test shows normal hearing.",
+          "An adult might follow a conversation fine in a quiet room but get lost in a noisy restaurant."
         ]
       },
       {
-        "heading": "Implications of APD",
-        "content": "APD can lead to academic challenges, communication difficulties, and social misunderstandings. Children may struggle with language-based subjects in school, and adults may find workplace communication demanding. With the right support, people with APD can develop strategies to improve listening and comprehension."
+        "heading": "History of Auditory Processing Disorder",
+        "content": "Researchers began studying auditory processing in the 1950s when they noticed some people had trouble understanding speech despite normal hearing tests. The term 'auditory processing disorder' became more common in the 1970s and 1980s. Debate continues about how to define and diagnose APD, but most experts agree it is a real condition that affects learning and communication. It often overlaps with other conditions like ADHD and language disorders.",
+        "examples": [
+          "Early studies focused on soldiers and workers who had trouble understanding speech in loud environments.",
+          "Today, audiologists and speech therapists work together to evaluate and support people with APD."
+        ]
       },
       {
-        "heading": "Methods to Overcome APD",
+        "heading": "Symptoms of Auditory Processing Disorder",
         "content": [
-          "Using visual aids and written instructions along with verbal information",
-          "Training programs to improve auditory discrimination and memory",
-          "Reducing background noise when giving instructions",
-          "Using assistive listening devices like FM systems",
-          "Teaching compensatory strategies, such as note-taking and paraphrasing"
+          "Difficulty following spoken directions, especially multi-step ones",
+          "Trouble understanding speech in noisy environments",
+          "Frequently asking people to repeat themselves",
+          "Difficulty telling similar-sounding words apart",
+          "Problems with reading and spelling linked to phonics",
+          "Trouble remembering what was said, even moments later",
+          "Fatigue after long periods of listening"
         ],
-        "closing": "Early intervention and communication strategies can significantly improve the daily functioning of individuals with APD."
+        "examples": [
+          "A teacher says 'Open your book to page 42 and read the first paragraph' but the student only opens the book.",
+          "A child might do well on a one-on-one reading test but struggle during group instruction."
+        ]
+      },
+      {
+        "heading": "Implications of Auditory Processing Disorder",
+        "content": "Classrooms are noisy and teachers talk a lot, so APD can make school very tiring. Students may seem inattentive or defiant when they simply did not process what was said. Social situations with background noise can be stressful. With the right accommodations, people with APD can keep up academically and build strong communication skills.",
+        "examples": [
+          "A student might miss homework instructions given aloud and be marked down for not completing the work.",
+          "A teenager might avoid group lunch tables because keeping up with multiple conversations is exhausting."
+        ]
+      },
+      {
+        "heading": "Methods to Overcome Auditory Processing Disorder",
+        "content": [
+          "Written instructions to back up spoken directions",
+          "Preferential seating close to the teacher, away from noise sources",
+          "Quiet testing environments with extra time if needed",
+          "Auditory training exercises guided by a speech therapist",
+          "Using visual aids, captions, and assistive listening devices"
+        ],
+        "closing": "APD does not mean a person cannot learn. It means they need information presented in ways their brain can process more easily.",
+        "examples": [
+          "A teacher writes homework steps on the board in addition to saying them aloud.",
+          "A student uses noise-canceling headphones during independent work in a busy classroom."
+        ]
       }
     ]
   },
   "6": {
-    "title": "NVLD (Nonverbal Learning Disorder)",
+    "title": "Nonverbal Learning Disorder (NVLD)",
+    "tldr": "NVLD affects visual-spatial skills, motor coordination, and reading social cues. People with NVLD often have strong verbal and memory skills but struggle with maps, graphs, body language, and unwritten social rules. Understanding and support can make a big difference.",
     "sections": [
       {
-        "heading": "What is NVLD?",
-        "content": "Nonverbal Learning Disorder (NVLD) is a neurological condition characterized by strong verbal skills but significant difficulties with visual-spatial processing, motor coordination, and social skills. Individuals with NVLD often struggle with nonverbal communication like body language, facial expressions, and abstract reasoning."
-      },
-      {
-        "heading": "History of NVLD",
-        "content": "NVLD was first identified in the 1960s by neuropsychologists observing children who had advanced language development but persistent trouble with motor tasks, spatial organization, and social interactions. Research into NVLD continues today as scientists work to better define and understand the condition."
-      },
-      {
-        "heading": "Symptoms of NVLD",
-        "content": [
-          "Strong vocabulary but difficulty understanding nonverbal cues",
-          "Clumsiness or poor motor coordination",
-          "Difficulty reading maps, graphs, or charts",
-          "Problems with organizing and planning",
-          "Social awkwardness or difficulty making friends",
-          "Challenges in math, particularly geometry and visual-based problems"
+        "heading": "What is Nonverbal Learning Disorder?",
+        "content": "NVLD is a learning difference where verbal skills (talking, reading, vocabulary) are often strong, but nonverbal skills are weaker. This includes understanding spatial relationships, reading facial expressions, and picking up on social cues. Motor skills like handwriting and coordination may also be affected. NVLD is not officially listed in all diagnostic manuals, but many clinicians and educators recognize it as a real pattern of strengths and challenges.",
+        "examples": [
+          "A student might give a detailed oral report but struggle to read a simple chart or graph.",
+          "A teenager might miss a friend's sarcastic tone and take a joke literally."
         ]
       },
       {
-        "heading": "Implications of NVLD",
-        "content": "NVLD can affect academic success, especially in subjects requiring visual-spatial reasoning or nonverbal problem-solving. Social difficulties can lead to isolation or anxiety. However, individuals with NVLD often excel in verbal expression, memory for facts, and detailed learning when taught through structured approaches."
+        "heading": "History of Nonverbal Learning Disorder",
+        "content": "The concept of NVLD was introduced by psychologist Byron Rourke in the 1980s. He noticed a group of children who had strong language skills but weak visual-spatial and social abilities. Research since then has linked NVLD to differences in the right hemisphere of the brain. There is ongoing debate about how NVLD relates to autism spectrum disorder and other conditions, but the core pattern of verbal strengths and nonverbal weaknesses is well documented.",
+        "examples": [
+          "Rourke's early work helped teachers see that a talkative, good reader could still need help with math visuals and social skills.",
+          "Researchers today use brain scans to study how people with NVLD process spatial and social information differently."
+        ]
       },
       {
-        "heading": "Methods to Overcome NVLD",
+        "heading": "Symptoms of Nonverbal Learning Disorder",
         "content": [
-          "Direct teaching of social skills and body language interpretation",
-          "Using step-by-step visual aids and clear verbal instructions",
-          "Providing extra time for tasks involving organization or visual processing",
-          "Encouraging activities that build fine and gross motor skills",
-          "Allowing strengths in verbal memory and factual learning to shine"
+          "Strong vocabulary and verbal memory but weak visual-spatial skills",
+          "Difficulty with maps, geometry, and understanding charts or diagrams",
+          "Clumsiness or poor coordination in sports and fine motor tasks",
+          "Trouble reading body language, tone of voice, and facial expressions",
+          "Difficulty adapting to change or new situations",
+          "Literal interpretation of language (trouble with idioms, sarcasm, or jokes)",
+          "Social anxiety or difficulty making and keeping friends"
         ],
-        "closing": "With proper support and awareness, individuals with NVLD can thrive academically, professionally, and socially."
+        "examples": [
+          "A student might memorize history dates easily but get lost finding a classroom in a new building.",
+          "A child might not understand why a classmate is upset unless the classmate says it directly."
+        ]
+      },
+      {
+        "heading": "Implications of Nonverbal Learning Disorder",
+        "content": "Because verbal skills are strong, NVLD can be overlooked. Teachers and parents may not realize a student needs help until social or visual-spatial demands increase in middle school or beyond. Social isolation and anxiety are common. Math classes with heavy visual content and team projects can be especially hard. With explicit social coaching and visual supports, people with NVLD can build skills and find their place.",
+        "examples": [
+          "A bright student might fail a geometry test not because of math logic but because they cannot interpret the diagrams.",
+          "An adult might excel in a writing job but find office politics confusing and stressful."
+        ]
+      },
+      {
+        "heading": "Methods to Overcome Nonverbal Learning Disorder",
+        "content": [
+          "Explicit teaching of social skills and unwritten social rules",
+          "Visual organizers and step-by-step guides for spatial tasks",
+          "Occupational therapy for motor coordination",
+          "Breaking down graphs, maps, and diagrams with clear labels",
+          "Social skills groups or coaching to practice reading cues"
+        ],
+        "closing": "NVLD comes with real strengths in language and memory. With targeted support for the harder areas, people with NVLD can navigate school, work, and relationships successfully.",
+        "examples": [
+          "A teacher uses color-coded labels on a graph so a student can follow the data without guessing.",
+          "A counselor role-plays common social situations so a student can practice reading tone and body language."
+        ]
       }
     ]
   },
   "7": {
-    "title": "LPD (Language Processing Disorder)",
+    "title": "Language Processing Disorder (LPD)",
+    "tldr": "LPD makes it hard to understand or use spoken language, even when hearing is fine. It can affect following directions, learning new words, and expressing ideas clearly. Speech therapy and classroom accommodations help children and adults with LPD communicate more confidently.",
     "sections": [
       {
-        "heading": "What is LPD?",
-        "content": "Language Processing Disorder (LPD) affects how individuals understand and express language. It is a type of Auditory Processing Disorder specifically related to language comprehension and production. People with LPD may have trouble finding the right words, understanding what others say, or organizing their thoughts into speech."
-      },
-      {
-        "heading": "History of LPD",
-        "content": "Language Processing Disorders have been studied since the mid-20th century alongside the broader field of speech-language pathology. Advances in brain imaging and cognitive science have improved understanding of how language difficulties are neurologically based rather than simply developmental delays."
-      },
-      {
-        "heading": "Symptoms of LPD",
-        "content": [
-          "Difficulty understanding spoken or written language",
-          "Problems finding the right words when speaking",
-          "Mixing up word order or leaving out words",
-          "Struggles with following multi-step directions",
-          "Difficulty retelling stories or explaining events",
-          "Challenges with reading comprehension"
+        "heading": "What is Language Processing Disorder?",
+        "content": "LPD is a condition where the brain has trouble processing language. It can affect understanding what others say (receptive language) or expressing thoughts in words (expressive language). LPD is different from a speech disorder, which affects how sounds are produced. A person with LPD might speak clearly but struggle to find the right words or follow a complex conversation.",
+        "examples": [
+          "A student might know the answer but take a long time to put it into words.",
+          "A child might confuse words that sound similar, like 'accept' and 'except.'"
         ]
       },
       {
-        "heading": "Implications of LPD",
-        "content": "LPD can make communication in school, work, and social settings difficult. Students might struggle with reading assignments, writing essays, or participating in discussions. Adults may find workplace communication and presentations challenging. However, with therapy and strategies, individuals can build strong communication skills."
+        "heading": "History of Language Processing Disorder",
+        "content": "Language disorders have been studied since the early 1900s, often grouped under terms like 'specific language impairment.' The idea of language processing as a distinct challenge grew as researchers separated it from hearing problems and general learning disabilities. Speech-language pathologists now play a key role in identifying and treating LPD. It often appears alongside dyslexia, ADHD, or APD.",
+        "examples": [
+          "Early speech therapy focused mainly on pronunciation, but today it also targets understanding and organizing language.",
+          "Modern evaluations test both how well a person understands language and how well they can express ideas."
+        ]
       },
       {
-        "heading": "Methods to Overcome LPD",
+        "heading": "Symptoms of Language Processing Disorder",
         "content": [
-          "Speech-language therapy focused on comprehension and expression",
-          "Breaking instructions into small, manageable parts",
-          "Encouraging repetition and clarification",
-          "Using visual supports like diagrams and charts",
-          "Building vocabulary and sentence formation skills through practice"
+          "Difficulty following spoken directions, especially long or complex ones",
+          "Limited vocabulary or trouble finding the right word (word-finding problems)",
+          "Sentences that are shorter or simpler than expected for their age",
+          "Difficulty understanding jokes, idioms, or figurative language",
+          "Trouble retelling a story in the correct order",
+          "Difficulty answering 'why' and 'how' questions",
+          "Frustration or withdrawal during conversations"
         ],
-        "closing": "Speech therapy and language-focused strategies help individuals with LPD improve their communication abilities and succeed academically and socially."
+        "examples": [
+          "A student asked to 'put your coat on the hook and bring me your folder' might only do the first part.",
+          "A teenager might say 'the thing you use to cut paper' instead of 'scissors' when they cannot recall the word."
+        ]
+      },
+      {
+        "heading": "Implications of Language Processing Disorder",
+        "content": "Language is used in every subject and social setting, so LPD can affect almost every part of a student's day. Reading comprehension and written expression often suffer because they depend on language skills. Peers may not understand why a student seems quiet or confused. With therapy and classroom support, people with LPD can improve their communication and participate more fully.",
+        "examples": [
+          "A student might score low on a reading test because they cannot explain what the passage meant, not because they cannot decode words.",
+          "An adult might avoid phone calls and prefer texting because real-time conversation feels overwhelming."
+        ]
+      },
+      {
+        "heading": "Methods to Overcome Language Processing Disorder",
+        "content": [
+          "Speech-language therapy focused on vocabulary, grammar, and comprehension",
+          "Simplified, step-by-step spoken instructions with visual support",
+          "Extra time to process and respond during discussions",
+          "Pre-teaching key vocabulary before new lessons",
+          "Encouraging use of gestures, pictures, or written notes to support communication"
+        ],
+        "closing": "Language skills can improve with practice and professional support. People with LPD benefit most when teachers, therapists, and families work together.",
+        "examples": [
+          "A speech therapist teaches a student to use a word web to organize ideas before speaking.",
+          "A teacher previews new vocabulary with pictures before starting a science unit."
+        ]
       }
     ]
   }
-  }
-  
+}

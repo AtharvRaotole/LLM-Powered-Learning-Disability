@@ -1,6 +1,16 @@
 """Centralized prompt templates for LangGraph workflow nodes."""
 
-from typing import Dict, Any
+import json
+from typing import Any, Dict, List, Optional
+
+from app.services.grade_registry import (
+    difficulty_display_label,
+    difficulty_guidance_block,
+    grade_display_label,
+    grade_guidance_block,
+    normalize_difficulty,
+    normalize_grade_level,
+)
 
 
 class WorkflowPrompts:
@@ -9,10 +19,14 @@ class WorkflowPrompts:
     @staticmethod
     def get_problem_generation_prompt(grade_level: str, difficulty: str) -> str:
         """Generate a math problem prompt tailored to grade level and difficulty."""
+        grade = normalize_grade_level(grade_level)
+        diff = normalize_difficulty(difficulty)
+        grade_label = grade_display_label(grade)
+        diff_label = difficulty_display_label(diff)
         return f"""
 You are an expert mathematics educator specializing in creating age-appropriate word problems for students with learning disabilities. You understand the cognitive development stages and can create problems that are challenging yet accessible.
 
-Generate a well-structured mathematics word problem suitable for a {grade_level} grade student with {difficulty} difficulty level. The problem should:
+Generate a well-structured mathematics word problem suitable for a {grade_label} student with {diff_label} difficulty level. The problem should:
 
 1. Be age-appropriate and engaging
 2. Use clear, simple language
@@ -22,14 +36,11 @@ Generate a well-structured mathematics word problem suitable for a {grade_level}
 6. Include numbers that are manageable for the grade level
 7. Match the specified difficulty level
 
-For 2nd grade: Focus on basic addition/subtraction, simple counting, basic shapes
-For 5th grade: Include fractions, decimals, basic geometry, multi-step problems
-For 7th grade: Include algebra basics, ratios, percentages, more complex word problems
+Grade-level guidance:
+{grade_guidance_block()}
 
 Difficulty levels:
-- Easy: Simple operations, small numbers, 2-3 steps
-- Medium: Moderate complexity, medium numbers, 3-4 steps
-- Hard: Complex reasoning, larger numbers, 4-5 steps
+{difficulty_guidance_block()}
 
 CRITICAL: The "answer" field must contain the EXACT final numerical answer that matches the solution steps. Double-check that your answer is consistent with your solution approach.
 
@@ -38,9 +49,9 @@ Format your output as JSON in the following structure:
   "problem": "<Word problem>",
   "answer": "<Final numerical answer - must match solution>",
   "solution": "<Detailed step-by-step approach to solve the problem>",
-  "grade_level": "{grade_level}",
+  "grade_level": "{grade}",
   "concepts": ["<list of math concepts covered>"],
-  "difficulty": "{difficulty}"
+  "difficulty": "{diff}"
 }}
 """
 
@@ -236,19 +247,25 @@ Create a realistic 10-12 exchange tutoring conversation that:
 
 The student's responses should be realistic - showing initial confusion, gradual understanding, and occasional setbacks, but overall progress with guidance.
 
+**Emotion and tone labels (required on every turn):**
+- Every Tutor turn MUST include a "tone" field: a short lowercase label from encouraging, empathetic, patient, celebratory, reassuring, curious, supportive
+- Every Student turn MUST include an "emotion" field: a short lowercase label from frustrated, confused, anxious, discouraged, curious, hesitant, hopeful, relieved, proud, engaged
+- Labels must match what the dialogue conveys (e.g. student says "I'm feeling frustrated" → emotion: "frustrated"; tutor responds warmly → tone: "encouraging")
+
 Format as JSON:
 {{
   "conversation": [
     {{
       "speaker": "Tutor",
       "text": "Tutor's message",
+      "tone": "encouraging",
       "strategy": "Teaching strategy being used",
       "purpose": "Why this approach"
     }},
     {{
       "speaker": "Student", 
       "text": "Student's response",
-      "emotion": "Student's emotional state",
+      "emotion": "frustrated",
       "understanding_level": "low/medium/high"
     }}
   ],
@@ -417,6 +434,137 @@ Format as JSON:
   "confidence_level": 0.0-1.0,
   "notes": "Additional observations and context"
 }}
+"""
+
+    @staticmethod
+    def get_disability_screening_problem_prompt(
+        grade_level: str,
+        difficulty: str,
+        round_number: int = 1,
+        prior_rounds: Optional[List[Dict[str, str]]] = None,
+        focus_area: Optional[str] = None,
+    ) -> str:
+        """Generate a diagnostic math problem for disability screening."""
+        prior_rounds = prior_rounds or []
+        prior_context = ""
+        if prior_rounds:
+            prior_context = (
+                "\nPrior assessment rounds (do NOT repeat these questions):\n"
+                + json.dumps(prior_rounds, indent=2)
+            )
+
+        if round_number == 1:
+            diagnostic_goal = """
+This is the FIRST screening question. Design a multi-step word problem that can reveal:
+- Reading/sequencing patterns (Dyslexia)
+- Number sense and operation confusion (Dyscalculia)
+- Careless errors and skipped steps (ADHD)
+- Organization and written work issues (Dysgraphia)
+- Comprehension of verbal-style instructions (Auditory Processing)
+- Visual-spatial reasoning (Non verbal Learning Disorder)
+- Language/vocabulary in word problems (Language Processing Disorder)
+"""
+        else:
+            diagnostic_goal = f"""
+This is follow-up question #{round_number}. Target this specific focus area: {focus_area or "ambiguous patterns from prior answers"}.
+Design a NEW question (different context and numbers) that isolates the focus area.
+Do NOT repeat prior questions.
+"""
+
+        return f"""
+You are an expert educational diagnostician creating diagnostic math screening questions.
+
+Generate a well-structured mathematics word problem for a {grade_level} grade student at {difficulty} difficulty.
+{diagnostic_goal}
+{prior_context}
+
+Requirements:
+1. Age-appropriate, clear language, real-world context
+2. Solvable in 3-5 steps with a single clear answer
+3. Diagnostic value: the student's work/answer should reveal processing patterns
+4. Do NOT mention disabilities or screening purpose in the problem text
+
+Format as JSON:
+{{
+  "problem": "<Word problem text>",
+  "answer": "<Exact final numerical answer>",
+  "solution": "<Step-by-step solution>",
+  "grade_level": "{grade_level}",
+  "difficulty": "{difficulty}",
+  "focus_area": "<What this question is designed to probe>",
+  "concepts": ["<math concepts covered>"]
+}}
+"""
+
+    @staticmethod
+    def get_disability_assessment_evaluation_prompt(
+        rounds: List[Dict[str, str]],
+        grade_level: str,
+        difficulty: str,
+        round_number: int,
+    ) -> str:
+        """Evaluate student answers and decide verdict or follow-up."""
+        canonical = [
+            "No disability",
+            "Dyslexia",
+            "Dysgraphia",
+            "Dyscalculia",
+            "Attention Deficit Hyperactivity Disorder",
+            "Auditory Processing Disorder",
+            "Non verbal Learning Disorder",
+            "Language Processing Disorder",
+        ]
+        rounds_json = json.dumps(rounds, indent=2)
+
+        return f"""
+You are an expert educational diagnostician conducting a learning disability screening assessment.
+Analyze the student's responses across all rounds and decide whether you have enough evidence for a confident verdict.
+
+Grade level: {grade_level}
+Difficulty: {difficulty}
+Current round: {round_number} of 3 maximum
+
+Assessment Q&A history:
+{rounds_json}
+
+Canonical disability names (use EXACTLY one of these for primary_disability):
+{json.dumps(canonical)}
+
+CRITICAL RULES:
+1. Do NOT guess. Only issue a verdict when multiple consistent indicators align.
+2. "No disability" is a valid confident outcome when work shows typical reasoning with minor errors.
+3. If evidence is ambiguous, conflicting, or insufficient, set status to "needs_follow_up".
+4. confidence must reflect how sure you are (0.0-1.0). Only use confidence >= 0.80 when evidence is strong and consistent.
+5. When requesting follow-up, specify next_question_focus to target the ambiguous area.
+
+Look for patterns indicating:
+- Dyslexia: reversals, sequencing errors, reading/comprehension issues in word problems
+- Dyscalculia: number sense problems, operation confusion, place value errors
+- ADHD: skipped steps, careless errors, impulsive wrong answers, incomplete work
+- Dysgraphia: disorganized work notation, miscopying numbers (if evident in written response)
+- Auditory Processing: misunderstanding problem structure or key quantities
+- Non verbal Learning Disorder: visual-spatial or pattern reasoning difficulties
+- Language Processing Disorder: vocabulary/abstract language difficulties
+
+Format as JSON:
+{{
+  "status": "verdict" | "needs_follow_up",
+  "confidence": 0.0-1.0,
+  "message": "User-facing message explaining your decision",
+  "next_question_focus": "<Required when status is needs_follow_up: area to probe next>",
+  "verdict": {{
+    "primary_disability": "<One canonical name or No disability>",
+    "indicators": ["Specific signs observed"],
+    "error_patterns": ["Error patterns in responses"],
+    "strengths_observed": ["Strengths shown"],
+    "reasoning": "Detailed explanation of the verdict",
+    "recommendations": ["Actionable recommendations"],
+    "professional_consultation": "This is a screening tool, not a clinical diagnosis."
+  }}
+}}
+
+If status is "needs_follow_up", set verdict to null and provide next_question_focus.
+If status is "verdict", populate verdict fully and set next_question_focus to null.
 """
 
 

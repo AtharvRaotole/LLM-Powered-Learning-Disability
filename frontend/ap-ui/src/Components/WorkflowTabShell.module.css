@@ -1,0 +1,110 @@
+.container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    margin-bottom: var(--space-5);
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.headerText {
+    flex: 1;
+}
+
+.title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-page, var(--text-primary));
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.subtitle {
+    color: var(--text-page-secondary, var(--text-secondary));
+    font-size: var(--font-size-sm);
+    margin: var(--space-2) 0 0;
+    line-height: 1.47;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    border: 0.5px solid var(--ios-separator);
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-10) var(--space-5);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--ios-separator);
+}
+
+.loading::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--ios-gray-4);
+    border-top-color: var(--ios-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: var(--space-3);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--ios-red);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    line-height: 1.47;
+}
+
+@media (max-width: 768px) {
+    .title {
+        font-size: var(--font-size-lg);
+    }
+
+    .subtitle {
+        font-size: var(--font-size-xs);
+    }
+
+    .content {
+        padding: var(--space-5);
+    }
+
+    .loading {
+        padding: var(--space-8) var(--space-4);
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        margin-bottom: var(--space-4);
+    }
+
+    .title {
+        font-size: var(--font-size-base);
+    }
+}

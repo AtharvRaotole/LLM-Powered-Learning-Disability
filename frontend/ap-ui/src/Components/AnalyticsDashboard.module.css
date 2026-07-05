@@ -459,6 +459,7 @@
 @media (max-width: 768px) {
     .container {
         padding: 16px;
+        margin: 0;
     }
     
     .header {
@@ -467,7 +468,7 @@
     }
     
     .header h2 {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
     
     .headerControls {

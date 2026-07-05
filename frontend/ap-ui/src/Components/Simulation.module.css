@@ -1,17 +1,20 @@
-.simulationContainer{
-    margin:2%;
+.simulationContainer {
+    margin: 0;
+    padding: var(--space-4);
+    max-width: 100%;
 }
-.genericButton{
-    padding: 10px 20px;
-    margin-left: 5px;
-    margin-right: 5px;
-    font-size: 16px;
+
+.genericButton {
+    padding: var(--space-3) var(--space-5);
+    margin: var(--space-1);
+    font-size: var(--font-size-base);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: 'background-color 0.2s';
+    transition: background-color 0.2s;
     background-color: #4CAF50;
+    min-height: 44px;
 }
 .disabled{
 background-color:#ccc;
@@ -50,7 +53,23 @@ text-decoration: underline;
     box-shadow: 0 0 0 3px rgba(100, 150, 250, 0.4); 
     border: 1px solid #6495ed;                         
 }
-.error{
-    color:red;
-    font-size:14px;
+.error {
+    color: red;
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 768px) {
+    .simulationContainer {
+        padding: var(--space-3);
+    }
+
+    .genericButton {
+        width: 100%;
+        margin: var(--space-1) 0;
+    }
+
+    .tweakInput {
+        font-size: var(--font-size-base);
+        min-height: 100px;
+    }
 }

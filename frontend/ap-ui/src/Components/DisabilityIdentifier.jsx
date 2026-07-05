@@ -1,98 +1,234 @@
 import { useState } from "react";
 import classes from "./DisabilityIdentifier.module.css";
-import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
+import {
+    startDisabilityAssessment,
+    evaluateDisabilityAssessment,
+} from "../Utils/langgraphApi";
+import GradeDifficultyControls from "./GradeDifficultyControls";
+import {
+    DEFAULT_DIFFICULTY,
+    DEFAULT_GRADE_LEVEL,
+    readStoredDifficulty,
+    readStoredGradeLevel,
+} from "../Utils/gradeConfig";
+
+const MAX_ROUNDS = 3;
 
 export default function DisabilityIdentifier() {
-    const [problem, setProblem] = useState('');
-    const [studentResponse, setStudentResponse] = useState('');
-    const [analysis, setAnalysis] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [gradeLevel, setGradeLevel] = useState(() => readStoredGradeLevel() || DEFAULT_GRADE_LEVEL);
+    const [difficulty, setDifficulty] = useState(() => readStoredDifficulty() || DEFAULT_DIFFICULTY);
+    const [phase, setPhase] = useState("idle"); // idle | question | loading | follow_up | verdict
+    const [loadingMessage, setLoadingMessage] = useState("");
+    const [currentQuestion, setCurrentQuestion] = useState(null);
+    const [currentAnswer, setCurrentAnswer] = useState("");
+    const [roundNumber, setRoundNumber] = useState(1);
+    const [history, setHistory] = useState([]);
+    const [followUpMessage, setFollowUpMessage] = useState("");
+    const [verdict, setVerdict] = useState(null);
+    const [confidence, setConfidence] = useState(null);
+    const [confidenceLabel, setConfidenceLabel] = useState("");
     const [error, setError] = useState(null);
+    const [historyOpen, setHistoryOpen] = useState(false);
 
-    async function analyzeResponse() {
-        if (!problem.trim() || !studentResponse.trim()) {
-            setError("Please provide both a problem and student response.");
+    function resetAssessment() {
+        setPhase("idle");
+        setCurrentQuestion(null);
+        setCurrentAnswer("");
+        setRoundNumber(1);
+        setHistory([]);
+        setFollowUpMessage("");
+        setVerdict(null);
+        setConfidence(null);
+        setConfidenceLabel("");
+        setError(null);
+        setHistoryOpen(false);
+    }
+
+    async function handleStart() {
+        setError(null);
+        setPhase("loading");
+        setLoadingMessage("Generating your assessment question…");
+
+        try {
+            const data = await startDisabilityAssessment({
+                grade_level: gradeLevel,
+                difficulty,
+            });
+            setCurrentQuestion(data.question);
+            setRoundNumber(data.round_number);
+            setPhase("question");
+        } catch (err) {
+            console.error("Start assessment error:", err);
+            setError("Failed to start assessment. Please try again.");
+            setPhase("idle");
+        }
+    }
+
+    async function handleSubmitAnswer() {
+        if (!currentAnswer.trim()) {
+            setError("Please enter your answer before submitting.");
             return;
         }
 
-        setIsLoading(true);
         setError(null);
-        setAnalysis(null);
+        setPhase("loading");
+        setLoadingMessage("Analyzing your response…");
+
+        const rounds = [
+            ...history,
+            { question: currentQuestion.problem, answer: currentAnswer.trim() },
+        ];
 
         try {
-            const result = await getOrRunFullWorkflow({
-                grade_level: sessionStorage.getItem('gradeLevel') || '7th',
-                difficulty: sessionStorage.getItem('difficulty') || 'medium',
-                disability: 'No disability',
-                problem: problem,
-                student_response: studentResponse,
+            const result = await evaluateDisabilityAssessment({
+                grade_level: gradeLevel,
+                difficulty,
+                rounds,
+                round_number: roundNumber,
             });
-            const analysisData = result?.results?.disability_analysis;
-            if (!analysisData) {
-                throw new Error("Disability analysis missing from workflow results");
+
+            if (result.status === "needs_follow_up") {
+                setHistory(rounds);
+                setFollowUpMessage(result.message);
+                setCurrentQuestion(result.next_question);
+                setRoundNumber(result.round_number);
+                setCurrentAnswer("");
+                setPhase("follow_up");
+                return;
             }
-            setAnalysis(analysisData);
+
+            setHistory(rounds);
+            setVerdict(result.verdict);
+            setConfidence(result.confidence);
+            setConfidenceLabel(result.confidence_label || result.verdict?.confidence_label);
+            setPhase("verdict");
         } catch (err) {
-            console.error("Error:", err);
-            setError("Failed to analyze response. Please try again.");
-        } finally {
-            setIsLoading(false);
+            console.error("Evaluate assessment error:", err);
+            setError("Failed to analyze your response. Please try again.");
+            setPhase(history.length > 0 ? "follow_up" : "question");
         }
     }
+
+    const isLoading = phase === "loading";
+    const showQuestion = phase === "question" || phase === "follow_up";
 
     return (
         <div className={classes.container}>
             <div className={classes.header}>
                 <div className={classes.title}>
                     <div className={classes.icon}>🔍</div>
-                    Disability Identification Tool
+                    Disability Assessment
                 </div>
                 <p className={classes.subtitle}>
-                    Analyze a student's response to identify potential learning disabilities
+                    Work through a few diagnostic math questions. We'll look at how you solve
+                    them and share an assessment when we're confident enough.
                 </p>
             </div>
 
-            <div className={classes.inputSection}>
-                <div className={classes.inputGroup}>
-                    <label htmlFor="problem" className={classes.label}>
-                        Math Problem Given to Student
-                    </label>
-                    <textarea
-                        id="problem"
-                        value={problem}
-                        onChange={(e) => setProblem(e.target.value)}
-                        placeholder="Enter the math problem that was given to the student..."
-                        className={classes.textarea}
-                        rows={4}
-                    />
+            {phase === "idle" && (
+                <div className={classes.settingsSection}>
+                    <div className={classes.settingsRow}>
+                        <GradeDifficultyControls
+                            gradeLevel={gradeLevel}
+                            difficulty={difficulty}
+                            onGradeChange={setGradeLevel}
+                            onDifficultyChange={setDifficulty}
+                            compact
+                        />
+                    </div>
+                    <button
+                        className={classes.analyzeBtn}
+                        onClick={handleStart}
+                        disabled={isLoading}
+                    >
+                        🎯 Start Assessment
+                    </button>
                 </div>
+            )}
 
-                <div className={classes.inputGroup}>
-                    <label htmlFor="response" className={classes.label}>
-                        Student's Response
-                    </label>
-                    <textarea
-                        id="response"
-                        value={studentResponse}
-                        onChange={(e) => setStudentResponse(e.target.value)}
-                        placeholder="Enter the student's complete response, including their work and final answer..."
-                        className={classes.textarea}
-                        rows={6}
-                    />
+            {(showQuestion || isLoading) && phase !== "idle" && phase !== "verdict" && (
+                <div className={classes.progressBar}>
+                    Question {roundNumber} of {MAX_ROUNDS}
                 </div>
+            )}
 
-                <button 
-                    className={classes.analyzeBtn}
-                    onClick={analyzeResponse}
-                    disabled={isLoading || !problem.trim() || !studentResponse.trim()}
-                >
-                    {isLoading ? '⏳' : '🔍'} Analyze Response
-                </button>
-            </div>
+            {phase === "follow_up" && followUpMessage && (
+                <div className={classes.followUpBanner}>
+                    <span className={classes.followUpIcon}>ℹ️</span>
+                    {followUpMessage}
+                </div>
+            )}
+
+            {history.length > 0 && showQuestion && (
+                <div className={classes.historySection}>
+                    <button
+                        type="button"
+                        className={classes.historyToggle}
+                        onClick={() => setHistoryOpen(!historyOpen)}
+                    >
+                        {historyOpen ? "▼" : "▶"} Previous answers ({history.length})
+                    </button>
+                    {historyOpen && (
+                        <div className={classes.historyList}>
+                            {history.map((round, idx) => (
+                                <div key={idx} className={classes.historyItem}>
+                                    <div className={classes.historyQuestion}>
+                                        <strong>Q{idx + 1}:</strong> {round.question}
+                                    </div>
+                                    <div className={classes.historyAnswer}>
+                                        <strong>Your answer:</strong> {round.answer}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {showQuestion && currentQuestion && (
+                <div className={classes.inputSection}>
+                    <div className={classes.questionCard}>
+                        <div className={classes.questionLabel}>Your Question</div>
+                        <p className={classes.questionText}>{currentQuestion.problem}</p>
+                    </div>
+
+                    <div className={classes.inputGroup}>
+                        <label htmlFor="response" className={classes.label}>
+                            Your Answer
+                        </label>
+                        <textarea
+                            id="response"
+                            value={currentAnswer}
+                            onChange={(e) => setCurrentAnswer(e.target.value)}
+                            placeholder="Show your work and final answer…"
+                            className={classes.textarea}
+                            rows={6}
+                        />
+                    </div>
+
+                    <div className={classes.actionRow}>
+                        <button
+                            className={classes.analyzeBtn}
+                            onClick={handleSubmitAnswer}
+                            disabled={isLoading || !currentAnswer.trim()}
+                        >
+                            {isLoading ? "⏳" : "✓"} Submit Answer
+                        </button>
+                        <button
+                            type="button"
+                            className={classes.secondaryBtn}
+                            onClick={resetAssessment}
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {isLoading && (
                 <div className={classes.loading}>
-                    Analyzing student response for potential learning disabilities...
+                    {loadingMessage}
                 </div>
             )}
 
@@ -102,78 +238,88 @@ export default function DisabilityIdentifier() {
                 </div>
             )}
 
-            {analysis && !isLoading && (
+            {phase === "verdict" && verdict && (
                 <div className={classes.results}>
-                    <h3 className={classes.resultsTitle}>Analysis Results</h3>
-                    
-                    {analysis.potential_disabilities && analysis.potential_disabilities.length > 0 && (
+                    <div className={`${classes.verdictHero} ${classes[confidenceLabel] || ""}`}>
+                        <div className={classes.verdictLabel}>Assessment Result</div>
+                        <div className={classes.verdictName}>
+                            {verdict.primary_disability === "No disability"
+                                ? "No Learning Disability Indicators Detected"
+                                : verdict.primary_disability}
+                        </div>
+                        {confidence !== null && (
+                            <span className={`${classes.confidence} ${classes[confidenceLabel]}`}>
+                                {Math.round(confidence * 100)}% confidence ({confidenceLabel})
+                            </span>
+                        )}
+                    </div>
+
+                    {verdict.reasoning && (
                         <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Potential Learning Disabilities</h4>
-                            {analysis.potential_disabilities.map((disability, index) => (
-                                <div key={index} className={classes.disabilityCard}>
-                                    <div className={classes.disabilityHeader}>
-                                        <span className={classes.disabilityName}>{disability.disability}</span>
-                                        <span className={`${classes.confidence} ${classes[disability.confidence]}`}>
-                                            {disability.confidence} confidence
-                                        </span>
-                                    </div>
-                                    <div className={classes.indicators}>
-                                        <strong>Indicators:</strong>
-                                        <ul>
-                                            {disability.indicators.map((indicator, idx) => (
-                                                <li key={idx}>{indicator}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div className={classes.explanation}>
-                                        <strong>Explanation:</strong> {disability.explanation}
-                                    </div>
-                                </div>
-                            ))}
+                            <h4 className={classes.sectionTitle}>Analysis</h4>
+                            <p className={classes.reasoningText}>{verdict.reasoning}</p>
                         </div>
                     )}
 
-                    {analysis.error_patterns && analysis.error_patterns.length > 0 && (
+                    {verdict.indicators?.length > 0 && (
                         <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Error Patterns Observed</h4>
+                            <h4 className={classes.sectionTitle}>Indicators Observed</h4>
                             <ul className={classes.patternList}>
-                                {analysis.error_patterns.map((pattern, index) => (
-                                    <li key={index} className={classes.patternItem}>{pattern}</li>
+                                {verdict.indicators.map((item, index) => (
+                                    <li key={index} className={classes.patternItem}>{item}</li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {analysis.strengths_observed && analysis.strengths_observed.length > 0 && (
+                    {verdict.error_patterns?.length > 0 && (
+                        <div className={classes.section}>
+                            <h4 className={classes.sectionTitle}>Error Patterns</h4>
+                            <ul className={classes.patternList}>
+                                {verdict.error_patterns.map((item, index) => (
+                                    <li key={index} className={classes.patternItem}>{item}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {verdict.strengths_observed?.length > 0 && (
                         <div className={classes.section}>
                             <h4 className={classes.sectionTitle}>Strengths Observed</h4>
                             <ul className={classes.strengthsList}>
-                                {analysis.strengths_observed.map((strength, index) => (
-                                    <li key={index} className={classes.strengthItem}>{strength}</li>
+                                {verdict.strengths_observed.map((item, index) => (
+                                    <li key={index} className={classes.strengthItem}>{item}</li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {analysis.recommendations && analysis.recommendations.length > 0 && (
+                    {verdict.recommendations?.length > 0 && (
                         <div className={classes.section}>
                             <h4 className={classes.sectionTitle}>Recommendations</h4>
                             <ul className={classes.recommendationsList}>
-                                {analysis.recommendations.map((recommendation, index) => (
-                                    <li key={index} className={classes.recommendationItem}>{recommendation}</li>
+                                {verdict.recommendations.map((item, index) => (
+                                    <li key={index} className={classes.recommendationItem}>{item}</li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {analysis.professional_consultation && (
+                    {verdict.professional_consultation && (
                         <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Professional Consultation</h4>
+                            <h4 className={classes.sectionTitle}>Important Notice</h4>
                             <div className={classes.consultationNote}>
-                                {analysis.professional_consultation}
+                                {verdict.professional_consultation}
                             </div>
                         </div>
                     )}
+
+                    <button
+                        className={classes.analyzeBtn}
+                        onClick={resetAssessment}
+                    >
+                        🔄 Start New Assessment
+                    </button>
                 </div>
             )}
         </div>

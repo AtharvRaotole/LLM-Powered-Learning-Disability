@@ -1,174 +1,153 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import DisabilitiesEnum from "../Store/Disabilities";
+import { useState } from "react";
 import classes from "./Strategies.module.css";
-import { getOrRunFullWorkflow } from "../Utils/langgraphApi";
 import ProblemContext from "./ProblemContext";
+import WorkflowTabShell from "./WorkflowTabShell";
+import { useWorkflow } from "../Context/WorkflowProvider";
+import { normalizeTeachingStrategies } from "../Utils/workflowFormatters";
 
-export default function Strategies(){
-    const {id}=useParams();
-    const disability=DisabilitiesEnum[id];
-    const problem=sessionStorage.getItem('problem');
-    const gradeLevel = sessionStorage.getItem('gradeLevel') || '7th';
-    const difficulty = sessionStorage.getItem('difficulty') || 'medium';
-    const [response,setResponse]=useState(null);
-    const [isLoading,setIsLoading]=useState(true);
-    const [error,setError]=useState(null);
-    
-    useEffect(()=>{
-        async function fetchLegacyStrategies(currentDisability){
-            const response = await fetch("http://localhost:8000/api/v1/openai/generate_strategies", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    disability: currentDisability,
-                    problem,
-                }),
-            });
-            if (!response.ok) {
-                throw new Error(`Legacy strategies failed (${response.status})`);
-            }
-            return response.json();
-        }
+function StrategyCard({ strategy, defaultOpen = false }) {
+    const [open, setOpen] = useState(defaultOpen);
+    const hasDetails = strategy.rationale || strategy.implementation?.length > 0;
 
-        async function loadStrategies(currentDisability){
-            setIsLoading(true);
-            setError(null);
-            try {
-                const payload = {
-                    grade_level: gradeLevel,
-                    difficulty,
-                    disability: currentDisability,
-                    problem,
-                };
-
-                let analysis = await getOrRunFullWorkflow(payload);
-                let strategyData = analysis?.results?.teaching_strategies;
-
-                if (!strategyData) {
-                    analysis = await getOrRunFullWorkflow(payload, { forceRefresh: true });
-                    strategyData = analysis?.results?.teaching_strategies;
-                }
-
-                if (!strategyData) {
-                    strategyData = await fetchLegacyStrategies(currentDisability);
-                }
-
-                setResponse(strategyData);
-            } catch (err) {
-                console.error("Strategies error:", err);
-                const message = err?.message || "Error while generating strategies. Please try again.";
-                setError(message);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        if (disability && problem) {
-            loadStrategies(disability);
-        }
-    },[gradeLevel,difficulty,disability,problem])
-    return(
-        <div className={classes.container}>
-            <ProblemContext />
-            <div className={classes.header}>
-                <div className={classes.headerIcon}>🎯</div>
-                <div>
-                    <h2 className={classes.headerTitle}>Teaching Strategies</h2>
-                    <p className={classes.headerSubtitle}>
-                        Evidence-based strategies to support this student's learning
-                    </p>
-                </div>
-            </div>
-            
-            {isLoading && (
-                <div className={classes.loading}>
-                    Generating teaching strategies...
-                </div>
+    return (
+        <div className={classes.strategyCard}>
+            <button
+                type="button"
+                className={classes.strategyHeader}
+                onClick={() => hasDetails && setOpen(!open)}
+                aria-expanded={open}
+                disabled={!hasDetails}
+            >
+                <span className={classes.strategyName}>{strategy.name}</span>
+                {hasDetails && <span className={classes.chevron}>{open ? "−" : "+"}</span>}
+            </button>
+            {strategy.description && (
+                <p className={classes.strategyDescription}>{strategy.description}</p>
             )}
-            
-            {error && (
-                <div className={classes.error}>
-                    {error}
-                </div>
-            )}
-            
-            {response && !isLoading && (
-                <div className={classes.strategies}>
-                    {response.immediate_strategies && response.immediate_strategies.length > 0 && (
-                        <div className={classes.strategySection}>
-                            <div className={classes.sectionTitle}>🚀 Immediate Strategies</div>
-                            <div className={classes.strategyList}>
-                                {response.immediate_strategies.map((strategy, index) => (
-                                    <div key={index} className={classes.strategyItem}>
-                                        {strategy}
-                                    </div>
-                                ))}
-                            </div>
+            {open && hasDetails && (
+                <div className={classes.strategyBody}>
+                    {strategy.rationale && (
+                        <div className={classes.strategyDetail}>
+                            <span className={classes.detailLabel}>Why it works</span>
+                            <p>{strategy.rationale}</p>
                         </div>
                     )}
-                    
-                    {response.accommodations && response.accommodations.length > 0 && (
-                        <div className={classes.strategySection}>
-                            <div className={classes.sectionTitle}>⚙️ Accommodations</div>
-                            <div className={classes.strategyList}>
-                                {response.accommodations.map((accommodation, index) => (
-                                    <div key={index} className={classes.strategyItem}>
-                                        {accommodation}
-                                    </div>
+                    {strategy.implementation?.length > 0 && (
+                        <div className={classes.strategyDetail}>
+                            <span className={classes.detailLabel}>How to implement</span>
+                            <ol>
+                                {strategy.implementation.map((step, i) => (
+                                    <li key={i}>{step}</li>
                                 ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    {response.multi_sensory_approaches && response.multi_sensory_approaches.length > 0 && (
-                        <div className={classes.strategySection}>
-                            <div className={classes.sectionTitle}>👁️ Multi-Sensory Approaches</div>
-                            <div className={classes.strategyList}>
-                                {response.multi_sensory_approaches.map((approach, index) => (
-                                    <div key={index} className={classes.strategyItem}>
-                                        {approach}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    {response.technology_tools && response.technology_tools.length > 0 && (
-                        <div className={classes.strategySection}>
-                            <div className={classes.sectionTitle}>💻 Technology Tools</div>
-                            <div className={classes.strategyList}>
-                                {response.technology_tools.map((tool, index) => (
-                                    <div key={index} className={classes.strategyItem}>
-                                        {tool}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    {response.assessment_modifications && response.assessment_modifications.length > 0 && (
-                        <div className={classes.strategySection}>
-                            <div className={classes.sectionTitle}>📝 Assessment Modifications</div>
-                            <div className={classes.strategyList}>
-                                {response.assessment_modifications.map((modification, index) => (
-                                    <div key={index} className={classes.strategyItem}>
-                                        {modification}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    {response.parent_communication && (
-                        <div className={classes.strategySection}>
-                            <div className={classes.sectionTitle}>👨‍👩‍👧‍👦 Parent Communication</div>
-                            <div className={classes.parentNote}>
-                                {response.parent_communication}
-                            </div>
+                            </ol>
                         </div>
                     )}
                 </div>
             )}
         </div>
-    )
+    );
+}
+
+function SectionBlock({ title, children }) {
+    if (!children) return null;
+    return (
+        <section className={classes.sectionBlock}>
+            <h3 className={classes.sectionHeading}>{title}</h3>
+            {children}
+        </section>
+    );
+}
+
+export default function Strategies() {
+    const { results, isLoading, error } = useWorkflow();
+    const normalized = normalizeTeachingStrategies(results?.teaching_strategies);
+    const hasContent =
+        normalized.primary.length > 0 ||
+        normalized.alternatives.length > 0 ||
+        normalized.scaffolding.length > 0 ||
+        normalized.accommodations.length > 0 ||
+        normalized.assessments.length > 0;
+
+    return (
+        <>
+            <ProblemContext />
+            <WorkflowTabShell
+                title="Teaching Strategies"
+                subtitle="Evidence-based strategies to support this student's learning"
+                isLoading={isLoading}
+                loadingMessage="Generating teaching strategies..."
+                error={error}
+            >
+                {!hasContent && !isLoading && !error && (
+                    <p className={classes.empty}>No strategies available for this session yet.</p>
+                )}
+
+                {hasContent && (
+                    <>
+                        {normalized.primary.length > 0 && (
+                            <SectionBlock title="Primary Strategies">
+                                <div className={classes.strategyList}>
+                                    {normalized.primary.map((strategy, index) => (
+                                        <StrategyCard
+                                            key={index}
+                                            strategy={strategy}
+                                            defaultOpen={index === 0}
+                                        />
+                                    ))}
+                                </div>
+                            </SectionBlock>
+                        )}
+
+                        {normalized.scaffolding.length > 0 && (
+                            <SectionBlock title="Scaffolding Sequence">
+                                <ol className={classes.numberedList}>
+                                    {normalized.scaffolding.slice(0, 5).map((step, i) => (
+                                        <li key={i}>{step}</li>
+                                    ))}
+                                </ol>
+                            </SectionBlock>
+                        )}
+
+                        {normalized.accommodations.length > 0 && (
+                            <SectionBlock title="Accommodations">
+                                <div className={classes.chipRow}>
+                                    {normalized.accommodations.map((item, i) => (
+                                        <span key={i} className={classes.chip}>{item}</span>
+                                    ))}
+                                </div>
+                            </SectionBlock>
+                        )}
+
+                        {normalized.alternatives.length > 0 && (
+                            <SectionBlock title="Alternative Approaches">
+                                <div className={classes.altList}>
+                                    {normalized.alternatives.map((alt, i) => (
+                                        <div key={i} className={classes.altCard}>
+                                            <strong>{alt.name}</strong>
+                                            {alt.description && <p>{alt.description}</p>}
+                                            {alt.whenToUse && (
+                                                <span className={classes.whenToUse}>
+                                                    Use when: {alt.whenToUse}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </SectionBlock>
+                        )}
+
+                        {normalized.assessments.length > 0 && (
+                            <SectionBlock title="Assessment Methods">
+                                <ul className={classes.bulletList}>
+                                    {normalized.assessments.map((item, i) => (
+                                        <li key={i}>{item}</li>
+                                    ))}
+                                </ul>
+                            </SectionBlock>
+                        )}
+                    </>
+                )}
+            </WorkflowTabShell>
+        </>
+    );
 }
