@@ -135,12 +135,6 @@ export default function AdaptiveDifficulty() {
         }
     }
 
-    function getPerformanceColor(score) {
-        if (score >= 0.7) return classes.high;
-        if (score >= 0.4) return classes.medium;
-        return classes.low;
-    }
-
     return (
         <div className={classes.container}>
             <div className={classes.header}>
