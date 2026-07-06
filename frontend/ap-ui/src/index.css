@@ -195,6 +195,10 @@
   --chat-chip-bg: var(--ios-gray-5);
   --chat-chip-fg: var(--text-primary);
   --chat-chip-bg-hover: var(--ios-gray-4);
+  --chat-bubble-received-bg: #e5e5ea;
+  --chat-bubble-received-fg: #000000;
+  --chat-bubble-sent-bg: var(--ios-blue);
+  --chat-bubble-sent-fg: #ffffff;
 
   color-scheme: light;
 }
@@ -293,6 +297,10 @@
   --chat-chip-bg: #3a3a3c;
   --chat-chip-fg: #ffffff;
   --chat-chip-bg-hover: #48484a;
+  --chat-bubble-received-bg: #3a3a3c;
+  --chat-bubble-received-fg: #ffffff;
+  --chat-bubble-sent-bg: var(--ios-blue);
+  --chat-bubble-sent-fg: #ffffff;
 
   --chat-fab-bg: #2c2c2e;
   --chat-fab-fg: #ffffff;

@@ -1,15 +1,17 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { normalizeMathText } from "../Utils/chatMessageFormat";
+import classes from "./ChatMessagesUI.module.css";
 
 const themes = {
     iMessage: {
-        receiverColor: "#e5e5ea",
-        receiverTextColor: "#000000",
+        receiverColor: "var(--chat-bubble-received-bg, #e5e5ea)",
+        receiverTextColor: "var(--chat-bubble-received-fg, #000000)",
         senderGradient: false,
-        senderColor: "#007aff",
-        senderGradientStart: "#007aff",
-        senderGradientEnd: "#0051a8",
-        senderTextColor: "#ffffff",
+        senderColor: "var(--chat-bubble-sent-bg, #007aff)",
+        senderGradientStart: "var(--chat-bubble-sent-bg, #007aff)",
+        senderGradientEnd: "var(--ios-blue-dark, #0051a8)",
+        senderTextColor: "var(--chat-bubble-sent-fg, #ffffff)",
     },
     WhatsApp: {
         receiverColor: "#ffffff",
@@ -31,7 +33,6 @@ const themes = {
     },
 };
 
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const isHex = (s) => !!s && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s);
 const normalizeHex = (hex, fallback = "#000000") => {
     if (!isHex(hex)) return fallback;
@@ -60,12 +61,75 @@ function resolveTheme(themeName) {
     };
 }
 
-function parseText(text) {
-    const parts = text.split(/\*\*(.*?)\*\*/g);
-    return parts.map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part));
+function parseInline(text) {
+    const parts = text.split(/(\*\*[^*]+\*\*|\d+\/\d+)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+            return <strong key={i}>{part.slice(2, -2)}</strong>;
+        }
+        if (/^\d+\/\d+$/.test(part)) {
+            return (
+                <span key={i} className={classes.mathExpr}>
+                    {part}
+                </span>
+            );
+        }
+        return part;
+    });
 }
 
-function TypingIndicator({ sender, colors, font, borderRadius }) {
+function parseMessageContent(text) {
+    const normalized = normalizeMathText(text);
+    const lines = normalized.split("\n");
+    const elements = [];
+    let listItems = [];
+    let listType = null;
+
+    const flushList = () => {
+        if (!listItems.length) return;
+        const ListTag = listType === "ol" ? "ol" : "ul";
+        elements.push(<ListTag key={`list-${elements.length}`}>{listItems}</ListTag>);
+        listItems = [];
+        listType = null;
+    };
+
+    lines.forEach((rawLine, index) => {
+        const line = rawLine.trim();
+        if (!line) {
+            flushList();
+            return;
+        }
+
+        const bulletMatch = line.match(/^[•\-*]\s+(.*)/);
+        const numMatch = line.match(/^\d+\.\s+(.*)/);
+
+        if (bulletMatch) {
+            if (listType !== "ul") {
+                flushList();
+                listType = "ul";
+            }
+            listItems.push(<li key={`li-${index}`}>{parseInline(bulletMatch[1])}</li>);
+            return;
+        }
+
+        if (numMatch) {
+            if (listType !== "ol") {
+                flushList();
+                listType = "ol";
+            }
+            listItems.push(<li key={`li-${index}`}>{parseInline(numMatch[1])}</li>);
+            return;
+        }
+
+        flushList();
+        elements.push(<p key={`p-${index}`}>{parseInline(line)}</p>);
+    });
+
+    flushList();
+    return elements.length ? elements : [<p key="empty">{parseInline(normalized)}</p>];
+}
+
+function TypingIndicator({ sender, colors }) {
     const reduced = useReducedMotion();
     const bubbleColor = sender ? colors.sender : colors.receiver;
     const textColor = sender ? colors.senderText : colors.receiverText;
@@ -76,18 +140,10 @@ function TypingIndicator({ sender, colors, font, borderRadius }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.9 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
+            className={`${classes.messageBubble} ${sender ? classes.messageBubbleSender : classes.messageBubbleReceiver}`}
             style={{
-                alignSelf: sender ? "flex-end" : "flex-start",
                 background: bubbleColor,
                 color: textColor,
-                borderRadius,
-                padding: "12px 16px",
-                maxWidth: "80%",
-                display: "flex",
-                gap: 4,
-                alignItems: "center",
-                fontSize: font.fontSize,
-                fontFamily: font.fontFamily,
             }}
         >
             {[0, 1, 2].map((i) => (
@@ -98,7 +154,8 @@ function TypingIndicator({ sender, colors, font, borderRadius }) {
                         height: 6,
                         borderRadius: "50%",
                         backgroundColor: textColor,
-                        display: "block",
+                        display: "inline-block",
+                        marginRight: i < 2 ? 4 : 0,
                     }}
                     animate={reduced ? { opacity: 0.6 } : { opacity: [0.3, 1, 0.3] }}
                     transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
@@ -108,7 +165,7 @@ function TypingIndicator({ sender, colors, font, borderRadius }) {
     );
 }
 
-function MessageBubble({ text, sender, colors, font, borderRadius }) {
+function MessageBubble({ text, sender, colors }) {
     const bubbleColor = sender ? colors.sender : colors.receiver;
     const textColor = sender ? colors.senderText : colors.receiverText;
 
@@ -117,20 +174,13 @@ function MessageBubble({ text, sender, colors, font, borderRadius }) {
             initial={{ opacity: 0, y: 12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
+            className={`${classes.messageBubble} ${sender ? classes.messageBubbleSender : classes.messageBubbleReceiver}`}
             style={{
-                alignSelf: sender ? "flex-end" : "flex-start",
                 background: bubbleColor,
                 color: textColor,
-                borderRadius,
-                padding: "12px 16px",
-                maxWidth: "80%",
-                wordBreak: "break-word",
-                fontSize: font.fontSize,
-                fontFamily: font.fontFamily,
-                lineHeight: font.lineHeight || "1.4em",
             }}
         >
-            {parseText(text)}
+            <div className={classes.messageContent}>{parseMessageContent(text)}</div>
         </motion.div>
     );
 }
@@ -139,38 +189,28 @@ export default function ChatMessagesUI({
     messages = [],
     isTyping = false,
     theme = "iMessage",
-    borderRadius = 16,
-    font = { fontSize: "14px", fontFamily: "Inter, system-ui, sans-serif", lineHeight: "1.4em" },
+    scrollContainerRef,
+    onScroll,
 }) {
     const colors = useMemo(() => resolveTheme(theme), [theme]);
 
     return (
         <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                width: "100%",
-                height: "100%",
-                padding: 16,
-                overflowY: "auto",
-                overscrollBehavior: "contain",
-                justifyContent: "flex-end",
-            }}
+            ref={scrollContainerRef}
+            className={classes.scrollContainer}
+            onScroll={onScroll}
         >
-            {messages.map((msg, i) => (
-                <MessageBubble
-                    key={msg.id ?? i}
-                    text={msg.text}
-                    sender={msg.sender}
-                    colors={colors}
-                    font={font}
-                    borderRadius={borderRadius}
-                />
-            ))}
-            {isTyping && (
-                <TypingIndicator sender={false} colors={colors} font={font} borderRadius={borderRadius} />
-            )}
+            <div className={classes.messagesInner}>
+                {messages.map((msg, i) => (
+                    <MessageBubble
+                        key={msg.id ?? i}
+                        text={msg.text}
+                        sender={msg.sender}
+                        colors={colors}
+                    />
+                ))}
+                {isTyping && <TypingIndicator sender={false} colors={colors} />}
+            </div>
         </div>
     );
 }

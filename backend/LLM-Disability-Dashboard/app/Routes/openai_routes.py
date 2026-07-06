@@ -167,7 +167,7 @@ async def chatWithAI(request: Request, payload: ChatRequest):
                 "answer": str(problem_context.get("answer", ""))[:256],
             }
 
-        history = payload.conversation_history[:10]
+        history = payload.conversation_history[:6]
         return await chat_with_ai(
             payload.message,
             payload.chat_mode,

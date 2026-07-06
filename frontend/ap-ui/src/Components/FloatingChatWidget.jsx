@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatMessagesUI from "./ChatMessagesUI";
 import { sendChatMessage } from "../Utils/langgraphApi";
@@ -6,8 +6,9 @@ import { getProblemObject } from "../Utils/workflowSession";
 import classes from "./FloatingChatWidget.module.css";
 
 const STORAGE_KEY = "floating-chat:messages";
+const NEAR_BOTTOM_THRESHOLD = 80;
 const WELCOME_TEXT =
-    "Hi! I'm your AI tutor. Ask me about math problems, concepts, or strategies — I'm here to help.";
+    "Hi! I'm your AI tutor. Ask me about math problems, concepts, or strategies. I'm here to help.";
 
 const CHAT_MODES = [
     { id: "tutor", label: "Tutor" },
@@ -60,7 +61,8 @@ export default function FloatingChatWidget() {
     const [isTyping, setIsTyping] = useState(false);
     const [chatMode, setChatMode] = useState("tutor");
     const [personality, setPersonality] = useState("helpful");
-    const messagesEndRef = useRef(null);
+    const scrollContainerRef = useRef(null);
+    const shouldAutoScrollRef = useRef(true);
 
     const currentProblem = getProblemObject();
 
@@ -68,14 +70,36 @@ export default function FloatingChatWidget() {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     }, [messages]);
 
+    const scrollToBottom = useCallback((behavior = "smooth") => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight;
+            if (behavior === "smooth") {
+                container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+            }
+        });
+    }, []);
+
+    const handleScroll = useCallback(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const distanceFromBottom =
+            container.scrollHeight - container.scrollTop - container.clientHeight;
+        shouldAutoScrollRef.current = distanceFromBottom <= NEAR_BOTTOM_THRESHOLD;
+    }, []);
+
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, isTyping, isOpen]);
+        if (shouldAutoScrollRef.current) {
+            scrollToBottom(isOpen ? "smooth" : "auto");
+        }
+    }, [messages, isTyping, isOpen, scrollToBottom]);
 
     const sendMessage = async (text) => {
         const trimmed = text.trim();
         if (!trimmed || isTyping) return;
 
+        shouldAutoScrollRef.current = true;
         setMessages((prev) => [...prev, { id: Date.now(), text: trimmed, sender: true }]);
         setInput("");
         setIsTyping(true);
@@ -118,6 +142,7 @@ export default function FloatingChatWidget() {
 
     const handleClear = () => {
         const fresh = [{ id: "welcome", text: WELCOME_TEXT, sender: false }];
+        shouldAutoScrollRef.current = true;
         setMessages(fresh);
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
     };
@@ -214,8 +239,13 @@ export default function FloatingChatWidget() {
                         </div>
 
                         <div className={classes.messagesArea}>
-                            <ChatMessagesUI messages={messages} isTyping={isTyping} theme="iMessage" />
-                            <div ref={messagesEndRef} />
+                            <ChatMessagesUI
+                                messages={messages}
+                                isTyping={isTyping}
+                                theme="iMessage"
+                                scrollContainerRef={scrollContainerRef}
+                                onScroll={handleScroll}
+                            />
                         </div>
 
                         <div className={classes.inputArea}>

@@ -1,0 +1,80 @@
+.scrollContainer {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.messagesInner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100%;
+    padding: 14px 16px;
+    justify-content: flex-end;
+}
+
+.messageBubble {
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding: 10px 14px;
+    max-width: 82%;
+    word-break: break-word;
+    border-radius: 18px;
+    font-family: var(--font-family-primary);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.messageBubbleSender {
+    align-self: flex-end;
+}
+
+.messageBubbleReceiver {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.messageContent {
+    color: inherit;
+}
+
+.messageContent p {
+    margin: 0 0 8px;
+    color: inherit;
+}
+
+.messageContent p:last-child {
+    margin-bottom: 0;
+}
+
+.messageContent strong {
+    font-weight: 600;
+    color: inherit;
+}
+
+.messageContent ul,
+.messageContent ol {
+    margin: 6px 0 8px;
+    padding-left: 1.2em;
+    color: inherit;
+}
+
+.messageContent li {
+    margin-bottom: 6px;
+    color: inherit;
+}
+
+.messageContent li:last-child {
+    margin-bottom: 0;
+}
+
+.messageContent .mathExpr {
+    display: inline-block;
+    font-family: var(--font-family-mono);
+    font-size: 0.92em;
+    font-weight: 600;
+    padding: 0 2px;
+}

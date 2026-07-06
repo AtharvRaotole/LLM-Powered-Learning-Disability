@@ -176,6 +176,8 @@
     overflow: hidden;
     background: var(--chat-messages-bg);
     min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .inputArea {

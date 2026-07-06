@@ -5,12 +5,13 @@ from itertools import chain
 
 from dotenv import load_dotenv
 from fastapi import HTTPException, Response
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 
 load_dotenv()
 
 # Initialize OpenAI client directly
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+async_openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def clean_json_response(content: str):
@@ -534,29 +535,37 @@ async def chat_with_ai(
     if conversation_history is None:
         conversation_history = []
     try:
-        # Define personality prompts
         personality_prompts = {
             "helpful": "You are a patient and encouraging math tutor. Be supportive and break down complex concepts into simple steps.",
             "challenging": "You are a challenging mentor who pushes critical thinking. Ask probing questions and encourage deeper analysis.",
             "friendly": "You are a friendly and approachable guide. Use casual language and make learning fun and engaging.",
-            "expert": "You are an expert professor with deep technical knowledge. Provide detailed explanations and advanced insights."
+            "expert": "You are an expert math tutor with deep knowledge. Be clear and precise, but keep replies brief and easy to follow.",
         }
-        
-        # Define mode-specific instructions
+
         mode_instructions = {
             "tutor": "Help the student with math problems, explain concepts, and provide step-by-step guidance. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
             "explain": "Focus on explaining mathematical concepts clearly with examples and analogies. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
             "practice": "Generate practice problems and provide feedback on solutions. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
-            "debug": "Help identify and fix errors in mathematical solutions and reasoning. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it."
+            "debug": "Help identify and fix errors in mathematical solutions and reasoning. When asked for a 'question' or 'problem', provide ONLY the problem without the solution unless specifically asked to solve it.",
         }
-        
+
         system_prompt = f"""{personality_prompts.get(personality, personality_prompts["helpful"])}
 
 {mode_instructions.get(chat_mode, mode_instructions["tutor"])}
 
 IMPORTANT: When the user asks for a "question", "problem", or "question to solve", provide ONLY the problem statement without the solution. Only provide the solution if they specifically ask you to "solve it", "show the solution", or "explain how to solve it".
 
-Respond as a helpful AI tutor. Be conversational, educational, and engaging. If the user asks for a math problem, provide one WITHOUT the solution unless they specifically ask for the solution. If they ask for explanations, break it down clearly. Keep responses concise but informative."""
+RESPONSE FORMAT (always follow):
+- Keep replies under ~120 words unless the student asks for more detail.
+- Use short bullet points (start lines with "• ") when listing steps or ideas.
+- Include ONE simple, concrete example when explaining a concept.
+- Use plain language suitable for a child learning math.
+- Ask at most ONE follow-up question per reply.
+- Do not write long paragraphs or lecture-style explanations.
+- Never use LaTeX, dollar signs, or code markup. Write all math in plain text (e.g. 1/4, 2 + 3 = 5).
+- Never use em dashes (—) or en dashes (–). Use commas, periods, or short sentences instead.
+
+Respond as a helpful AI tutor. Be conversational, educational, and engaging."""
 
         if isinstance(problem_context, dict) and problem_context.get("problem"):
             system_prompt += (
@@ -570,20 +579,23 @@ Respond as a helpful AI tutor. Be conversational, educational, and engaging. If 
                 )
 
         messages = [{"role": "system", "content": system_prompt}]
-        for msg in conversation_history[-10:]:
+        for msg in conversation_history[-6:]:
             role = "assistant" if msg.get("sender") == "ai" else "user"
             content = msg.get("content", "")
             if content:
                 messages.append({"role": role, "content": content})
         messages.append({"role": "user", "content": user_message})
 
-        from app.services.nvidia_chat_client import chat_completion
+        response = await async_openai_client.chat.completions.create(
+            model=os.getenv("CHAT_MODEL", "gpt-4o-mini"),
+            messages=messages,
+            max_tokens=400,
+            temperature=0.5,
+        )
 
-        response = chat_completion(messages, max_tokens=1024, temperature=0.6)
-        
         content = response.choices[0].message.content.strip()
-        
+
         return {"response": content, "personality": personality, "mode": chat_mode}
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in chat: {str(e)}")
