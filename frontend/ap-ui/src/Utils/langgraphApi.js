@@ -259,6 +259,14 @@ export async function evaluateDisabilityAssessment({ grade_level, difficulty, ro
     });
 }
 
+export async function getAdaptiveDifficultyRecommendation({ grade_level, difficulty, student_history }) {
+    return postJson("/api/v2/langgraph/adaptive-difficulty", {
+        grade_level,
+        difficulty,
+        student_history,
+    });
+}
+
 export async function getOrRunAnalysis(payload, options = {}) {
     const workflowType = options.workflow_type || "analysis_only";
     const forceRefresh = options.forceRefresh || false;

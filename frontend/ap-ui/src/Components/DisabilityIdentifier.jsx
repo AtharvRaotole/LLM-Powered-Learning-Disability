@@ -17,7 +17,7 @@ const MAX_ROUNDS = 3;
 export default function DisabilityIdentifier() {
     const [gradeLevel, setGradeLevel] = useState(() => readStoredGradeLevel() || DEFAULT_GRADE_LEVEL);
     const [difficulty, setDifficulty] = useState(() => readStoredDifficulty() || DEFAULT_DIFFICULTY);
-    const [phase, setPhase] = useState("idle"); // idle | question | loading | follow_up | verdict
+    const [phase, setPhase] = useState("idle");
     const [loadingMessage, setLoadingMessage] = useState("");
     const [currentQuestion, setCurrentQuestion] = useState(null);
     const [currentAnswer, setCurrentAnswer] = useState("");
@@ -100,7 +100,7 @@ export default function DisabilityIdentifier() {
             setHistory(rounds);
             setVerdict(result.verdict);
             setConfidence(result.confidence);
-            setConfidenceLabel(result.confidence_label || result.verdict?.confidence_label);
+            setConfidenceLabel(result.confidence_label || result.verdict?.confidence_label || "");
             setPhase("verdict");
         } catch (err) {
             console.error("Evaluate assessment error:", err);
@@ -111,108 +111,110 @@ export default function DisabilityIdentifier() {
 
     const isLoading = phase === "loading";
     const showQuestion = phase === "question" || phase === "follow_up";
+    const verdictTitle = verdict?.primary_disability === "No disability"
+        ? "No Learning Disability Indicators Detected"
+        : verdict?.primary_disability;
 
     return (
-        <div className={classes.container}>
-            <div className={classes.header}>
-                <div className={classes.title}>
-                    <div className={classes.icon}>🔍</div>
-                    Disability Assessment
-                </div>
+        <div className={classes.page}>
+            <header className={classes.header}>
+                <h1 className={classes.largeTitle}>Disability Assessment</h1>
                 <p className={classes.subtitle}>
-                    Work through a few diagnostic math questions. We'll look at how you solve
-                    them and share an assessment when we're confident enough.
+                    Work through a few diagnostic math questions. We'll analyze how you solve them
+                    and share an assessment when we're confident enough.
                 </p>
-            </div>
+            </header>
 
             {phase === "idle" && (
-                <div className={classes.settingsSection}>
-                    <div className={classes.settingsRow}>
-                        <GradeDifficultyControls
-                            gradeLevel={gradeLevel}
-                            difficulty={difficulty}
-                            onGradeChange={setGradeLevel}
-                            onDifficultyChange={setDifficulty}
-                            compact
-                        />
-                    </div>
+                <section className={classes.controlsCard}>
+                    <GradeDifficultyControls
+                        gradeLevel={gradeLevel}
+                        difficulty={difficulty}
+                        onGradeChange={setGradeLevel}
+                        onDifficultyChange={setDifficulty}
+                    />
                     <button
-                        className={classes.analyzeBtn}
+                        type="button"
+                        className={classes.primaryBtn}
                         onClick={handleStart}
                         disabled={isLoading}
                     >
-                        🎯 Start Assessment
+                        Start Assessment
                     </button>
-                </div>
+                </section>
             )}
 
             {(showQuestion || isLoading) && phase !== "idle" && phase !== "verdict" && (
-                <div className={classes.progressBar}>
+                <div className={classes.progressChip}>
                     Question {roundNumber} of {MAX_ROUNDS}
                 </div>
             )}
 
             {phase === "follow_up" && followUpMessage && (
-                <div className={classes.followUpBanner}>
-                    <span className={classes.followUpIcon}>ℹ️</span>
+                <div className={classes.infoBanner} role="status">
                     {followUpMessage}
                 </div>
             )}
 
             {history.length > 0 && showQuestion && (
-                <div className={classes.historySection}>
+                <section className={classes.group}>
                     <button
                         type="button"
-                        className={classes.historyToggle}
+                        className={classes.disclosureRow}
                         onClick={() => setHistoryOpen(!historyOpen)}
+                        aria-expanded={historyOpen}
                     >
-                        {historyOpen ? "▼" : "▶"} Previous answers ({history.length})
+                        <span>Previous answers ({history.length})</span>
+                        <span className={classes.disclosureChevron}>{historyOpen ? "−" : "+"}</span>
                     </button>
                     {historyOpen && (
-                        <div className={classes.historyList}>
+                        <div className={classes.disclosureContent}>
                             {history.map((round, idx) => (
                                 <div key={idx} className={classes.historyItem}>
-                                    <div className={classes.historyQuestion}>
-                                        <strong>Q{idx + 1}:</strong> {round.question}
-                                    </div>
-                                    <div className={classes.historyAnswer}>
-                                        <strong>Your answer:</strong> {round.answer}
-                                    </div>
+                                    <p className={classes.historyQuestion}>
+                                        <span className={classes.historyLabel}>Q{idx + 1}</span>
+                                        {round.question}
+                                    </p>
+                                    <p className={classes.historyAnswer}>{round.answer}</p>
                                 </div>
                             ))}
                         </div>
                     )}
-                </div>
+                </section>
             )}
 
             {showQuestion && currentQuestion && (
-                <div className={classes.inputSection}>
-                    <div className={classes.questionCard}>
-                        <div className={classes.questionLabel}>Your Question</div>
-                        <p className={classes.questionText}>{currentQuestion.problem}</p>
-                    </div>
+                <section className={classes.groupedList}>
+                    <section className={classes.group}>
+                        <div className={classes.groupHeader}>Question</div>
+                        <div className={classes.groupCell}>
+                            <p className={classes.questionText}>{currentQuestion.problem}</p>
+                        </div>
+                    </section>
 
-                    <div className={classes.inputGroup}>
-                        <label htmlFor="response" className={classes.label}>
-                            Your Answer
-                        </label>
-                        <textarea
-                            id="response"
-                            value={currentAnswer}
-                            onChange={(e) => setCurrentAnswer(e.target.value)}
-                            placeholder="Show your work and final answer…"
-                            className={classes.textarea}
-                            rows={6}
-                        />
-                    </div>
+                    <section className={classes.group}>
+                        <div className={classes.groupHeader}>Your Answer</div>
+                        <div className={classes.groupCell}>
+                            <textarea
+                                id="response"
+                                value={currentAnswer}
+                                onChange={(e) => setCurrentAnswer(e.target.value)}
+                                placeholder="Show your work and final answer…"
+                                className={classes.textarea}
+                                rows={6}
+                                aria-label="Your answer"
+                            />
+                        </div>
+                    </section>
 
                     <div className={classes.actionRow}>
                         <button
-                            className={classes.analyzeBtn}
+                            type="button"
+                            className={classes.primaryBtn}
                             onClick={handleSubmitAnswer}
                             disabled={isLoading || !currentAnswer.trim()}
                         >
-                            {isLoading ? "⏳" : "✓"} Submit Answer
+                            Submit Answer
                         </button>
                         <button
                             type="button"
@@ -223,104 +225,115 @@ export default function DisabilityIdentifier() {
                             Cancel
                         </button>
                     </div>
-                </div>
+                </section>
             )}
 
             {isLoading && (
-                <div className={classes.loading}>
+                <div className={classes.statusBanner}>
+                    <span className={classes.spinner} aria-hidden="true" />
                     {loadingMessage}
                 </div>
             )}
 
             {error && (
-                <div className={classes.error}>
+                <div className={classes.errorBanner} role="alert">
                     {error}
                 </div>
             )}
 
             {phase === "verdict" && verdict && (
-                <div className={classes.results}>
-                    <div className={`${classes.verdictHero} ${classes[confidenceLabel] || ""}`}>
-                        <div className={classes.verdictLabel}>Assessment Result</div>
-                        <div className={classes.verdictName}>
-                            {verdict.primary_disability === "No disability"
-                                ? "No Learning Disability Indicators Detected"
-                                : verdict.primary_disability}
+                <section className={classes.groupedList}>
+                    <section className={classes.group}>
+                        <div className={classes.groupHeader}>Assessment Result</div>
+                        <div className={classes.groupCell}>
+                            <h2 className={classes.verdictTitle}>{verdictTitle}</h2>
+                            {confidence !== null && (
+                                <span className={`${classes.confidenceChip} ${classes[confidenceLabel] || ""}`}>
+                                    {Math.round(confidence * 100)}% confidence
+                                    {confidenceLabel ? ` · ${confidenceLabel}` : ""}
+                                </span>
+                            )}
                         </div>
-                        {confidence !== null && (
-                            <span className={`${classes.confidence} ${classes[confidenceLabel]}`}>
-                                {Math.round(confidence * 100)}% confidence ({confidenceLabel})
-                            </span>
-                        )}
-                    </div>
+                    </section>
 
                     {verdict.reasoning && (
-                        <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Analysis</h4>
-                            <p className={classes.reasoningText}>{verdict.reasoning}</p>
-                        </div>
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Analysis</div>
+                            <div className={classes.groupCell}>
+                                <p className={classes.bodyText}>{verdict.reasoning}</p>
+                            </div>
+                        </section>
                     )}
 
                     {verdict.indicators?.length > 0 && (
-                        <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Indicators Observed</h4>
-                            <ul className={classes.patternList}>
-                                {verdict.indicators.map((item, index) => (
-                                    <li key={index} className={classes.patternItem}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Indicators Observed</div>
+                            <div className={classes.groupCell}>
+                                <ul className={classes.list}>
+                                    {verdict.indicators.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </section>
                     )}
 
                     {verdict.error_patterns?.length > 0 && (
-                        <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Error Patterns</h4>
-                            <ul className={classes.patternList}>
-                                {verdict.error_patterns.map((item, index) => (
-                                    <li key={index} className={classes.patternItem}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Error Patterns</div>
+                            <div className={classes.groupCell}>
+                                <ul className={classes.list}>
+                                    {verdict.error_patterns.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </section>
                     )}
 
                     {verdict.strengths_observed?.length > 0 && (
-                        <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Strengths Observed</h4>
-                            <ul className={classes.strengthsList}>
-                                {verdict.strengths_observed.map((item, index) => (
-                                    <li key={index} className={classes.strengthItem}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Strengths Observed</div>
+                            <div className={classes.groupCell}>
+                                <ul className={classes.list}>
+                                    {verdict.strengths_observed.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </section>
                     )}
 
                     {verdict.recommendations?.length > 0 && (
-                        <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Recommendations</h4>
-                            <ul className={classes.recommendationsList}>
-                                {verdict.recommendations.map((item, index) => (
-                                    <li key={index} className={classes.recommendationItem}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Recommendations</div>
+                            <div className={classes.groupCell}>
+                                <ul className={classes.list}>
+                                    {verdict.recommendations.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </section>
                     )}
 
                     {verdict.professional_consultation && (
-                        <div className={classes.section}>
-                            <h4 className={classes.sectionTitle}>Important Notice</h4>
-                            <div className={classes.consultationNote}>
-                                {verdict.professional_consultation}
+                        <section className={classes.group}>
+                            <div className={classes.groupHeader}>Important Notice</div>
+                            <div className={classes.groupCell}>
+                                <p className={classes.noticeText}>{verdict.professional_consultation}</p>
                             </div>
-                        </div>
+                        </section>
                     )}
 
                     <button
-                        className={classes.analyzeBtn}
+                        type="button"
+                        className={classes.primaryBtn}
                         onClick={resetAssessment}
                     >
-                        🔄 Start New Assessment
+                        Start New Assessment
                     </button>
-                </div>
+                </section>
             )}
         </div>
     );

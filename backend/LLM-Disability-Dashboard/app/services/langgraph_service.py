@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 
+from .adaptive_difficulty import adaptive_manager
 from .cache_store import get_cache_store
 from .disability_registry import normalize_disability
 from .grade_registry import DEFAULT_DIFFICULTY, DEFAULT_GRADE_LEVEL, normalize_difficulty, normalize_grade_level
@@ -123,10 +124,49 @@ async def run_analysis_workflow(payload: Dict[str, Any]) -> Dict[str, Any]:
     return await _run_graph_workflow(payload)
 
 
+def _parse_student_history(raw_history: Any) -> List[Dict[str, Any]]:
+    if raw_history is None:
+        return []
+    if isinstance(raw_history, str):
+        try:
+            parsed = json.loads(raw_history)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="student_history must be valid JSON") from exc
+        if not isinstance(parsed, list):
+            raise HTTPException(status_code=400, detail="student_history must be a list")
+        return parsed
+    if isinstance(raw_history, list):
+        return raw_history
+    raise HTTPException(status_code=400, detail="student_history must be a list")
+
+
+async def run_adaptive_difficulty(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Compute an adaptive difficulty plan from stored session history."""
+    history = _parse_student_history(payload.get("student_history"))
+    current_difficulty = normalize_difficulty(payload.get("difficulty", DEFAULT_DIFFICULTY))
+    grade_level = normalize_grade_level(payload.get("grade_level", DEFAULT_GRADE_LEVEL))
+    plan = adaptive_manager.calculate_next_difficulty(history, current_difficulty)
+    return {
+        "status": "ok",
+        "workflow_type": "adaptive_only",
+        "current_step": "completed",
+        "results": {
+            "adaptive_plan": plan,
+        },
+        "metadata": {
+            "grade_level": grade_level,
+            "difficulty": current_difficulty,
+            "session_count": len(history),
+        },
+    }
+
+
 async def run_workflow(payload: Dict[str, Any]) -> Dict[str, Any]:
     workflow_type = str(payload.get("workflow_type", "full")).lower()
     if workflow_type == "problem_only":
         return await run_problem_workflow(payload)
+    if workflow_type in {"adaptive_only", "adaptive_difficulty"}:
+        return await run_adaptive_difficulty(payload)
     if workflow_type == "analysis_only":
         return await run_analysis_workflow(payload)
     if workflow_type == "pre_tutor":
@@ -295,6 +335,7 @@ __all__ = [
     "run_full_workflow",
     "run_problem_workflow",
     "run_analysis_workflow",
+    "run_adaptive_difficulty",
     "run_workflow",
     "schedule_prewarm",
     "get_prewarm_status",

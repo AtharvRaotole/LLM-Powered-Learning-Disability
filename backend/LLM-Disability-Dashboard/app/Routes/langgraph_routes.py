@@ -11,6 +11,7 @@ from app.services.langgraph_service import (
     get_cache_stats,
     get_prewarm_status,
     invalidate_workflow_cache,
+    run_adaptive_difficulty,
     run_analysis_workflow,
     run_batch_simulate,
     run_full_workflow,
@@ -161,6 +162,22 @@ class DisabilityAssessmentEvaluateRequest(BaseModel):
         return _coerce_difficulty(value)
 
 
+class AdaptiveDifficultyRequest(BaseModel):
+    grade_level: str = Field(default=DEFAULT_GRADE_LEVEL)
+    difficulty: str = Field(default=DEFAULT_DIFFICULTY)
+    student_history: List[Dict[str, Any]] = Field(default_factory=list)
+
+    @field_validator("grade_level", mode="before")
+    @classmethod
+    def normalize_grade(cls, value: str) -> str:
+        return _coerce_grade(value)
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def normalize_difficulty_field(cls, value: str) -> str:
+        return _coerce_difficulty(value)
+
+
 langgraph_router = APIRouter()
 
 
@@ -168,7 +185,7 @@ langgraph_router = APIRouter()
 async def healthcheck() -> Dict[str, Any]:
     return {
         "status": "ok",
-        "workflows": ["problem_only", "full", "analysis_only", "pre_tutor", "batch_simulate", "disability_assessment"],
+        "workflows": ["problem_only", "full", "analysis_only", "adaptive_only", "pre_tutor", "batch_simulate", "disability_assessment"],
         "grade_levels": [{"value": value, "label": label} for value, label in GRADE_LEVELS],
         "difficulty_levels": [{"value": value, "label": label} for value, label in DIFFICULTY_LEVELS],
         "defaults": {
@@ -198,6 +215,16 @@ async def disability_assessment_evaluate(payload: DisabilityAssessmentEvaluateRe
             rounds,
             payload.round_number,
         )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@langgraph_router.post("/adaptive-difficulty")
+async def adaptive_difficulty(payload: AdaptiveDifficultyRequest) -> Dict[str, Any]:
+    try:
+        return await run_adaptive_difficulty(payload.model_dump())
     except HTTPException:
         raise
     except Exception as exc:
